@@ -155,5 +155,7 @@ token* lex(char* filename) {
 
         printf("%s:%zu:%zu: %s\n", t.pos.filename, t.pos.row, t.pos.col, token_str(t));
     } while (t.type != t_EOF);
+    
+    fclose(f.f);
     return tokens;
 }
