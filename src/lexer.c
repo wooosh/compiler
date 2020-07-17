@@ -4,6 +4,8 @@
 
 #include "lexer.h"
 
+// TODO: consider whether or not tokens should the text they represent
+
 char* token_str(token t) {
   switch(t.type) {
     case t_lparen: return "(";
@@ -22,16 +24,53 @@ char* token_str(token t) {
   };
 }
 
-void eat_whitespace(FILE* f) {
-  char c;
-  while ((c = getc(f)) && (c == ' ' || c == '\t' || c == '\n'));
-  ungetc(c, f);
+// Using a tracked file lets you automatically get a file location identifier,
+// useful for errors, eg "test.c:33:35: error message"
+typedef struct tracked_file {
+    FILE* f;
+    char* filename;
+    size_t row; // AKA line
+    size_t col; // AKA character
+    size_t last_row_len;
+} tracked_file;
+
+// Wrapped getc that operates on tracked files 
+char wgetc(tracked_file* t) {
+    char c = getc(t->f);
+    if (c == '\n') {
+        t->row++;
+        t->last_row_len = t->col;
+        t->col = 1;
+    } else {
+        t->col++;
+    }
+    return c;
 }
 
-token read_token(FILE* f) {
-  token t;
+int wungetc(char c, tracked_file* t) {
+    if (c == '\n') {
+        t->col = t->last_row_len;
+        t->row--;
+    } else if (t->col > 1) {
+        t->col--;
+    }
+    return ungetc(c, t->f);
+}
+
+void eat_whitespace(tracked_file* f) {
+  char c;
+  while ((c = wgetc(f)) && (c == ' ' || c == '\t' || c == '\n'));
+  wungetc(c, f);
+}
+
+token read_token(tracked_file* f) {
   eat_whitespace(f);
-  char c = getc(f);
+  
+  // @POTENTIALBUG: filename may be deallocated after the lexer is run, maybe
+  // duplicate and free later?
+  token t = {t_unknown,{f->filename, f->row, f->col}};
+  
+  char c = wgetc(f);
   if (c == EOF) {
     t.type = t_EOF;
     return t;
@@ -58,11 +97,15 @@ token read_token(FILE* f) {
       return t;
   }
   
-  ungetc(c, f);
+  wungetc(c, f);
+
+  // TODO: move this under identifiers, and check if the "identifier" starts
+  // with a digit, this way we still maintain our file position with wgetc
   // Read number
   if (c == '-' || isdigit(c)) {
     // TODO: error handling
-    int n = fscanf(f, "%d", &t.val.integer);
+  
+    int n = fscanf(f->f, "%d", &t.val.integer);
     t.type = t_literal;
     return t;
   }
@@ -72,7 +115,7 @@ token read_token(FILE* f) {
   size_t size = 1;
   size_t len = 0;
   // TODO: eof handling
-  while ((c = getc(f)) && (isalnum(c) || c == '_')) {
+  while ((c = wgetc(f)) && (isalnum(c) || c == '_')) {
     if (len == size) {
       size *=2;
       identifier = realloc(identifier, size);
@@ -81,21 +124,30 @@ token read_token(FILE* f) {
     len++;
   }
   if (len > 0) {
-    ungetc(c, f);
+    wungetc(c, f);
     t.val.str = identifier;
     t.type = t_identifier;
     return t;
   }
   
   printf("%c", c);
-  getc(f); // for debug so we don't loop forever
-  
+  wgetc(f); // for debug so we don't loop forever
 }
 
-void lex(char* filename) {
-    FILE *f;
-    f = fopen(filename, "rb");
-
+token* lex(char* filename) {
+    tracked_file f = {fopen(filename, "rb"), filename, 1, 1, 0}; 
+    if (f.f == NULL) perror("lexer");
+    
+    size_t size = 1;
+    size_t len = 0;
+    token* tokens = malloc(size*sizeof(token));
     token t;
-    while ((t = read_token(f)).type != t_EOF) printf("%s\n", token_str(t));
+    while ((t = read_token(&f)).type != t_EOF) {
+        if (len == size) {
+            size *= 2;
+            tokens = realloc(tokens, size*sizeof(token));
+        }
+        printf("%s:%zu:%zu: %s\n", t.pos.filename, t.pos.row, t.pos.col, token_str(t));
+    }
+    return tokens;
 }

@@ -18,12 +18,20 @@ enum token_type {
     t_rbrace,
     t_comma,
     t_semicolon,
-    t_EOF
+    t_EOF,
+    t_unknown
 };
+
+typedef struct token_pos {
+    char* filename;
+    size_t row; // AKA column
+    size_t col; // AKA character
+} token_pos;
 
 // TODO: add file index
 typedef struct token {
     enum token_type type;
+    token_pos pos;
     union {
         char* str; // identifer, str literal
         int integer; // num literal
@@ -32,4 +40,4 @@ typedef struct token {
 } token;
 
 char* token_str(token t);
-void lex(char* filename);
+token* lex(char* filename);
