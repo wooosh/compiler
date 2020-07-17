@@ -20,6 +20,7 @@ char* token_str(token t) {
       snprintf(num, len, "%d", t.val.integer);
       return num;
     case t_identifier: return t.val.str;
+    case t_EOF: return "EOF";
     default: return "unknown";
   };
 }
@@ -142,12 +143,17 @@ token* lex(char* filename) {
     size_t len = 0;
     token* tokens = malloc(size*sizeof(token));
     token t;
-    while ((t = read_token(&f)).type != t_EOF) {
+    do {
+        t = read_token(&f);
         if (len == size) {
             size *= 2;
             tokens = realloc(tokens, size*sizeof(token));
         }
+        
+        tokens[len] = t;
+        len++;
+
         printf("%s:%zu:%zu: %s\n", t.pos.filename, t.pos.row, t.pos.col, token_str(t));
-    }
+    } while (t.type != t_EOF);
     return tokens;
 }
