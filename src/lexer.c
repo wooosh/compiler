@@ -58,6 +58,13 @@ int wungetc(char c, tracked_file* t) {
     return ungetc(c, t->f);
 }
 
+char* token_location(token t) {
+    size_t len = snprintf(NULL, 0, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col) + 1;
+    char* buf = malloc(len);
+    snprintf(buf, len, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col);
+    return buf;
+}
+
 void eat_whitespace(tracked_file* f) {
   char c;
   while ((c = wgetc(f)) && (c == ' ' || c == '\t' || c == '\n'));

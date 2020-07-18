@@ -39,5 +39,6 @@ typedef struct token {
     } val;
 } token;
 
+char* token_location(token t);
 char* token_str(token t);
 token* lex(char* filename);
