@@ -25,6 +25,21 @@ char* token_str(token t) {
   };
 }
 
+char* token_type_str(enum token_type t) {
+	switch(t) {
+		case t_lparen: return "'('";
+		case t_rparen: return "')'";
+		case t_lbrace: return "'{'";
+		case t_rbrace: return "'}'";
+		case t_comma: return "','";
+		case t_semicolon: return "';'";
+		case t_literal: return "integer literal";
+		case t_identifier: return "identifier";
+		case t_EOF: return "EOF";
+		default: return "unknown";
+	};
+}
+
 // Using a tracked file lets you automatically get a file location identifier,
 // useful for errors, eg "test.c:33:35: error message"
 typedef struct tracked_file {

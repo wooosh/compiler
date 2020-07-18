@@ -41,4 +41,5 @@ typedef struct token {
 
 char* token_location(token t);
 char* token_str(token t);
+char* token_type_str(enum token_type t);
 token* lex(char* filename);

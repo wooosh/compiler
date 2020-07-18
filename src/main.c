@@ -1,33 +1,47 @@
 #include "lexer.h"
 
-// @TODO: type system
-// @TODO: parser
-// @TODO: backend
+// @Todo: type system
+// @Todo: parser
+// @Todo: backend
 
 typedef struct token_buf {
     token* tokens;
     size_t idx;
 } token_buf;
 
-// @TODO: check for EOF
+// @Todo: check for EOF
 token tb_pop(token_buf* tb) {
     tb->idx++;
     return tb->tokens[tb->idx-1];
 }
 
 typedef struct function {
-    // @TODO: parameters
-    // @TODO: return value
+    // @Todo: parameters
+    // @Todo: return value
     char* name;
 } function;
+
+#define try_pop_type(T, TB, TYPE)  \
+	T = tb_pop(TB); \
+	if (T.type != TYPE) { \
+		printf( \
+			"%s Expected type %s, got type %s\n", \
+			token_location(T), \
+			token_type_str(TYPE), \
+			token_type_str(T.type) \
+		); \
+		if (T.type == t_EOF) break; \
+        	else continue; \
+       	}
 
 void parse(token_buf* tb) {
     // Continually try to parse functions
     token t;
     while(1) {
-        t = tb_pop(tb);
-        if (t.type != t_identifier) printf("%s\n", token_location(t));
-	if (t.type == t_EOF) break;
+    
+        // pop return type
+        try_pop_type(t, tb, t_identifier);
+       	//printf("%s\n", t.val.str);
     }
 }
 
