@@ -83,6 +83,10 @@ int wungetc(char c, tracked_file* t) {
     return ungetc(c, t->f);
 }
 
+void set_token_len(tracked_file* tf, token* t) {
+	
+}
+
 char* token_location(token t) {
     size_t len = snprintf(NULL, 0, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col) + 1;
     char* buf = malloc(len);
@@ -177,6 +181,7 @@ token* lex(char* filename) {
     token t;
     do {
         t = read_token(&f);
+        t.pos.len = f.col - t.pos.col;
         if (len == size) {
             size *= 2;
             tokens = realloc(tokens, size*sizeof(token));

@@ -28,14 +28,13 @@ void print_token_loc(token t) {
 	size_t len = 0;
 	getline(&line, &len, f);
 	printf("   |%s   |", line);
-	// @Cleanup
-	for (int i=0; i<t.pos.line_idx; i++) {
-		printf(" ");
-	}
-	printf("^\n");
+	// @Cleanup: change to printf padding
+	for (int i=0; i<t.pos.line_idx; i++) printf(" ");
+	for (int i=0; i<t.pos.len; i++) printf("^");
+	printf("\n");
 }
 
-// @Todo: accept null for description (for comma or paren, it is obvious what we want)
+// @Todo: truncate multiline tokens
 // @Bug: Doesn't handle eof
 int compare_types(token t, enum token_type ts[], char* desc) {
 	size_t len = 0;
