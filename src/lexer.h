@@ -27,7 +27,6 @@ typedef struct token_pos {
     size_t row; // AKA line
     size_t col; // AKA character
     size_t line_start;
-    size_t line_idx; // @Todo: remove line_idx, its equivelant to col
     size_t len;
 } token_pos;
 

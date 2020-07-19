@@ -29,9 +29,10 @@ void print_token_loc(token t) {
 	getline(&line, &len, f);
 	printf("   |%s   |", line);
 	// @Cleanup: change to printf padding
-	for (int i=0; i<t.pos.line_idx; i++) printf(" ");
+	printf("%*s", t.pos.col-1, "");
+	printf("\x1b[31m");
 	for (int i=0; i<t.pos.len; i++) printf("^");
-	printf("\n");
+	printf("\x1b[0m\n");
 }
 
 // @Todo: truncate multiline tokens

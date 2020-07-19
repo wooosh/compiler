@@ -105,7 +105,7 @@ token read_token(tracked_file* f) {
   
   // @POTENTIALBUG: filename may be deallocated after the lexer is run, maybe
   // duplicate and free later?
-  token t = {t_unknown,{f->filename, f->row, f->col, f->line_start, f->idx - f->line_start}};
+  token t = {t_unknown,{f->filename, f->row, f->col, f->line_start}};
   
   char c = wgetc(f);
   if (c == EOF) {
