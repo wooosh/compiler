@@ -48,25 +48,35 @@ typedef struct tracked_file {
     size_t row; // AKA line
     size_t col; // AKA character
     size_t last_row_len;
+    // @Bug: will break on multiline tokens
+    size_t line_start;
+    size_t last_line_start;
+    size_t idx;
 } tracked_file;
 
 // Wrapped getc that operates on tracked files 
 char wgetc(tracked_file* t) {
     char c = getc(t->f);
+    t->idx++;
     if (c == '\n') {
         t->row++;
         t->last_row_len = t->col;
         t->col = 1;
+        
+        t->last_line_start = t->line_start;
+        t->line_start = t->idx;
     } else {
         t->col++;
     }
     return c;
 }
 
-int wungetc(char c, tracked_file* t) {
+int wungetc(char c, tracked_file* t) {	
+    t->idx--;
     if (c == '\n') {
         t->col = t->last_row_len;
         t->row--;
+        t->line_start = t->last_line_start;
     } else if (t->col > 1) {
         t->col--;
     }
@@ -91,7 +101,7 @@ token read_token(tracked_file* f) {
   
   // @POTENTIALBUG: filename may be deallocated after the lexer is run, maybe
   // duplicate and free later?
-  token t = {t_unknown,{f->filename, f->row, f->col}};
+  token t = {t_unknown,{f->filename, f->row, f->col, f->line_start, f->idx - f->line_start}};
   
   char c = wgetc(f);
   if (c == EOF) {

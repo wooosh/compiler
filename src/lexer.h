@@ -24,8 +24,10 @@ enum token_type {
 
 typedef struct token_pos {
     char* filename;
-    size_t row; // AKA column
+    size_t row; // AKA line
     size_t col; // AKA character
+    size_t line_start;
+    size_t line_idx;
 } token_pos;
 
 // TODO: add file index

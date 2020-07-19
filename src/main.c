@@ -21,6 +21,20 @@ typedef struct function {
     char* name;
 } function;
 
+void print_token_loc(token t) {
+	FILE* f = fopen(t.pos.filename, "rb");
+	fseek(f, t.pos.line_start, SEEK_SET);
+	char* line = NULL;
+	size_t len = 0;
+	getline(&line, &len, f);
+	printf("   |%s   |", line);
+	// @Cleanup
+	for (int i=0; i<t.pos.line_idx; i++) {
+		printf(" ");
+	}
+	printf("^\n");
+}
+
 // @Todo: handle EOF
 int compare_types(token t, enum token_type ts[]) {
 	size_t len = 0;
@@ -38,6 +52,7 @@ int compare_types(token t, enum token_type ts[]) {
 			token_type_str(ts[0]),
 			token_type_str(t.type)
 		);
+		print_token_loc(t);
 	} else {
 		printf("%s Expected one of ", token_location(t));
 		char spacer[] = ", ";
@@ -70,9 +85,9 @@ void parse(token_buf* tb) {
     
     while(1) {
     	// @Todo: add parse_type()
-        try_pop_type(tb, t, t_identifier); // return type
+        try_pop_type(tb, t, t_identifier);
         printf("%s\n", t.val.str);
-        try_pop_type(tb, t, t_identifier); // name
+        try_pop_type(tb, t, t_identifier);
         printf("%s\n", t.val.str);
         try_pop_type(tb, t, t_lparen); // opening paren
         do {
