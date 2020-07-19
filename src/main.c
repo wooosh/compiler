@@ -21,27 +21,67 @@ typedef struct function {
     char* name;
 } function;
 
-#define try_pop_type(T, TB, TYPE)  \
-	T = tb_pop(TB); \
-	if (T.type != TYPE) { \
-		printf( \
-			"%s Expected type %s, got type %s\n", \
-			token_location(T), \
-			token_type_str(TYPE), \
-			token_type_str(T.type) \
-		); \
-		if (T.type == t_EOF) break; \
-        	else continue; \
-       	}
+// @Todo: handle EOF
+int compare_types(token t, enum token_type ts[]) {
+	size_t len = 0;
+	for (int i=0; ts[i] != t_EOF; i++) {
+		if (ts[i] == t.type) {
+			return 1;
+		}
+		len++;
+	}
+	// Didn't match any of the types
+	if (len == 1) {
+		printf(
+			"%s Expected %s, got %s\n",
+			token_location(t),
+			token_type_str(ts[0]),
+			token_type_str(t.type)
+		);
+	} else {
+		printf("%s Expected one of ", token_location(t));
+		char spacer[] = ", ";
+		for (int i=0; i<len; i++) {
+			// @Cleanup: dumb
+			if (i + 1 == len) {
+				spacer[0] = ' ';
+				spacer[1] = '\0';
+			}
+			printf("%s%s", token_type_str(ts[i]), spacer);
+		}
+		printf(", got %s\n", token_type_str(t.type));
+	}
+	return 0;
+}
 
+// Sets T to the token
+#define try_pop_types(TB, T, TYPES...) \
+	T = tb_pop(TB); \
+	if (!compare_types(T, (enum token_type[]) {TYPES, t_EOF})) return;
+#define try_pop_type try_pop_types
+
+// @Consider: Expected return type (identifier), got literal
+// @Consider: macro to automatically get value of token if its a type
+// @Consider: how to handle unexpected tokens
 void parse(token_buf* tb) {
     // Continually try to parse functions
     token t;
-    while(1) {
+    //compare_types(t_identifier, (enum token_type[]){t_EOF, t_literal}); 
     
-        // pop return type
-        try_pop_type(t, tb, t_identifier);
-       	//printf("%s\n", t.val.str);
+    while(1) {
+    	// @Todo: add parse_type()
+        try_pop_type(tb, t, t_identifier); // return type
+        printf("%s\n", t.val.str);
+        try_pop_type(tb, t, t_identifier); // name
+        printf("%s\n", t.val.str);
+        try_pop_type(tb, t, t_lparen); // opening paren
+        do {
+        	token param_type, param_name;
+		try_pop_type(tb, param_type, t_identifier);
+		try_pop_type(tb, param_name, t_identifier);
+		printf("param: %s %s\n", param_type.val.str, param_name.val.str);
+       		try_pop_types(tb, t, t_comma, t_rparen);
+       	} while (t.type != t_rparen);
     }
 }
 
