@@ -1,3 +1,3 @@
-void main(int 12) {
+void main(int a b) {
     return 42;
 }
