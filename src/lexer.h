@@ -1,3 +1,6 @@
+#ifndef LEXER_H
+#define LEXER_H
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,3 +42,5 @@ char *token_location(token t);
 char *token_str(token t);
 char *token_type_str(enum token_type t);
 token *lex(char *filename);
+
+#endif
