@@ -1,6 +1,6 @@
 int fn2() {}
 int magic_function(int a) {
-    return add(a, 42)
+    return add(42, a)
 }
 
 void main(int argc) {

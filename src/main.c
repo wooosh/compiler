@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include <stdbool.h>
 
 // @Todo: type system
 // @Todo: parser
@@ -8,6 +9,10 @@ typedef struct token_buf {
   token *tokens;
   size_t idx;
 } token_buf;
+
+token tb_peak(token_buf *tb) {
+  return tb->tokens[tb->idx];
+}
 
 // @Todo: check for EOF
 token tb_pop(token_buf *tb) {
@@ -107,6 +112,112 @@ void print_function(function fn) {
   }
 }
 
+enum expression_type {
+  // statements
+  e_fn_call,
+  e_return,
+  
+  // non-statements
+  e_integer_literal,
+  e_variable // @Consider: change to ref?
+};
+
+struct fn_call;
+struct expression;
+
+typedef struct expression {
+  enum expression_type type;
+  // @Todo: work position in?
+  union {
+    struct expression* exp; // return value
+    int num;
+    char* name;
+    struct fn_call* fn_call;
+  } val;
+} expression;
+
+struct fn_call {
+  char* name;
+  size_t params_len;
+  expression* params;
+};
+
+expression parse_expression(token_buf *tb, bool statement) {
+  expression e;
+  token t = tb_pop(tb);
+  switch(t.type) {
+    // @Cleanup
+    case t_return:
+      e.type = e_return;
+      expression* return_value = malloc(sizeof(expression));
+      *return_value = parse_expression(tb, false);
+      e.val.exp = return_value;
+      return e;
+    case t_identifier: // fn call or var
+      if (tb->tokens[tb->idx].type == t_lparen) { // fn call
+        e.type = e_fn_call;
+        struct fn_call* fnc = malloc(sizeof(expression));
+        fnc->name = t.val.str;
+        tb_pop(tb); // skip lparen
+        fnc->params_len = 0;
+        if (tb_pop(tb).type != t_rparen) {
+          tb_unpop(tb);
+          size_t params_size = 1;
+          fnc->params = malloc(params_size * sizeof(struct expression));
+          do {
+            if (fnc->params_len == params_size) {
+              params_size *= 2;
+              fnc->params = realloc(fnc->params, params_size * sizeof(expression));
+            }
+            fnc->params[fnc->params_len] = parse_expression(tb, false);
+            fnc->params_len++;
+            try_pop_types(tb, t, NULL, t_comma, t_rparen);
+          } while (t.type != t_rparen);
+          e.val.fn_call = fnc;
+          return e;
+        }
+      } else { // variable
+        e.type = e_variable;
+        e.val.name = t.val.str;
+        return e;
+      }
+      case t_literal:
+        e.type = e_integer_literal;
+        e.val.num = t.val.integer;
+        return e;
+      default:;
+  }
+  printf("???\n"); // @Todo: proper error message
+  exit(0);
+}
+
+// @Cleanup: clean recursive expression printer
+void print_expression(expression e) {
+  switch(e.type) {
+    case e_return:
+      printf("return ");
+      print_expression(*e.val.exp);
+      break;
+    case e_integer_literal:
+      printf("%d", e.val.num);
+      break;
+    case e_fn_call:
+      printf("%s(", e.val.fn_call->name);
+      for (int i=0; i<e.val.fn_call->params_len; i++) {
+        print_expression(e.val.fn_call->params[i]);
+        if (i < e.val.fn_call->params_len - 1)
+        printf(", ");
+      }
+      printf(")");
+      break;
+    case e_variable:
+      printf(e.val.name);
+      break;
+    default:
+      printf("???\n");
+  }
+}
+
 // @Bug: handle EOF
 void parse(token_buf *tb) {
   // Continually try to parse functions
@@ -126,7 +237,6 @@ void parse(token_buf *tb) {
       // Read parameters
       size_t params_size = 1;
       fn.params = malloc(params_size * sizeof(struct param_pair));
-      size_t param_idx = 0;
       do {
         if (fn.params_len == params_size) {
           params_size *= 2;
@@ -145,7 +255,8 @@ void parse(token_buf *tb) {
     try_pop_type(tb, t, NULL, t_lbrace);
     // @Cleanup: maybe restructure into do while?
     while (tb->tokens[tb->idx].type != t_rbrace) {
-      tb_pop(tb);
+      print_expression(parse_expression(tb, true));
+      printf("\n");
     }
     tb_pop(tb);
     print_function(fn);

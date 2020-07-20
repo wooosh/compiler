@@ -155,7 +155,7 @@ token read_token(tracked_file *f) {
   size_t len = 0;
   bool is_num = true;
 
-  // TODO: eof handling
+  // @Todo: eof handling
   while ((c = wgetc(f)) && (isalnum(c) || c == '_')) {
     if (len == size) {
       size *= 2;
@@ -172,6 +172,7 @@ token read_token(tracked_file *f) {
   if (len > 0) {
     wungetc(c, f);
     if (is_num) {
+      // @Todo: read into unsigned variable, and negate if first char is '-'
       sscanf(str, "%d", &t.val.integer);
       t.type = t_literal;
       return t;
@@ -189,7 +190,6 @@ token read_token(tracked_file *f) {
     }
   }
 
-  // @Todo: panic
   printf("%s Found unknown character: '%c'\n", token_location(t), c);
   exit(1);
 }
