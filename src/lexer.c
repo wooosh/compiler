@@ -121,8 +121,6 @@ void eat_whitespace(tracked_file *f) {
 token read_token(tracked_file *f) {
   eat_whitespace(f);
 
-  // @POTENTIALBUG: filename may be deallocated after the lexer is run, maybe
-  // duplicate and free later?
   token t = {t_unknown, {f->filename, f->row, f->col, f->line_start}};
 
   char c = wgetc(f);
@@ -192,8 +190,8 @@ token read_token(tracked_file *f) {
   }
 
   // @Todo: panic
-  printf("%c", c);
-  wgetc(f); // for debug so we don't loop forever
+  printf("%s Found unknown character: '%c'\n", token_location(t), c);
+  exit(1);
 }
 
 token *lex(char *filename) {
