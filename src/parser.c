@@ -67,15 +67,6 @@ int compare_types(token t, enum token_type ts[], char *desc) {
     return;
 #define try_pop_type try_pop_types
 
-// @Cleanup: use token_str
-void print_function(function fn) {
-  printf("\nname: %s\nreturn type: %s\nparams:\n", fn.name.val.str,
-         fn.return_type.val.str);
-  for (int i = 0; i < fn.params_len; i++) {
-    printf("  %s %s\n", fn.params[i].type.val.str, fn.params[i].name.val.str);
-  }
-}
-
 expression parse_expression(token_buf *tb, bool statement);
 
 expression parse_fn_call(token_buf *tb) {
@@ -174,15 +165,30 @@ void print_expression(expression e) {
   }
 }
 
+// @Cleanup: use token_str
+void print_function(function fn) {
+  printf("\nname: %s\nreturn type: %s\nparams:\n", fn.name.val.str,
+         fn.return_type.val.str);
+  for (int i = 0; i < fn.params_len; i++) {
+    printf("  %s %s\n", fn.params[i].type.val.str, fn.params[i].name.val.str);
+  }
+  for (int i = 0; i < fn.body_len; i++) {
+    print_expression(fn.body[i]);
+    printf("\n");
+  }
+}
+
 // @Bug: handle EOF
-void parse(token* tokens) {
+struct function_list parse(token* tokens) {
   // @Cleanup: super ugly
   token_buf tb_pre = {tokens, 0};
   token_buf* tb = &tb_pre;
   // Continually try to parse functions
   token t;
-  // compare_types(t_identifier, (enum token_type[]){t_EOF, t_literal});
-
+  
+  size_t fl_size = 1;
+  struct function_list fl =  {0, malloc(sizeof(function) * fl_size)};
+  
   while (tb->tokens[tb->idx].type != t_EOF) {
     function fn;
     try_pop_type(tb, fn.return_type, "return type", t_identifier);
@@ -214,11 +220,25 @@ void parse(token* tokens) {
     // Start parsing the function body
     try_pop_type(tb, t, NULL, t_lbrace);
     // @Cleanup: maybe restructure into do while?
+    size_t body_size = 1;
+    fn.body = malloc(sizeof(expression) * body_size);
+    fn.body_len = 0;
     while (tb->tokens[tb->idx].type != t_rbrace) {
-      print_expression(parse_expression(tb, true));
-      printf("\n");
+      if (fn.body_len == body_size) {
+        body_size *= 2;
+        fn.body = realloc(fn.body, body_size * sizeof(expression));
+      }
+      fn.body[fn.body_len] = parse_expression(tb, true);
+      fn.body_len++;
     }
     tb_pop(tb);
     print_function(fn);
+    if (fl.len == fl_size) {
+        fl_size *= 2;
+        fl.functions = realloc(fl.functions, fl_size * sizeof(function));
+    }
+    fl.functions[fl.len] = fn;
+    fl.len++;
   }
+  return fl;
 }

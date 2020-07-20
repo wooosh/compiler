@@ -7,13 +7,6 @@ struct param_pair {
   token type;
 };
 
-typedef struct function {
-  token return_type;
-  token name;
-  size_t params_len;
-  struct param_pair *params;
-} function;
-
 enum expression_type {
   // statements
   e_fn_call,
@@ -51,6 +44,19 @@ struct fn_call {
   expression *params;
 };
 
+typedef struct function {
+  token return_type;
+  token name;
+  size_t params_len;
+  struct param_pair *params;
+  size_t body_len;
+  expression* body;
+} function;
 
-void parse(token* tokens);
+struct function_list {
+  size_t len;
+  function* functions;
+};
+
+struct function_list parse(token* tokens);
 #endif

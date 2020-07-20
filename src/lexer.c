@@ -167,6 +167,7 @@ token read_token(tracked_file *f) {
     str[len] = c;
     len++;
   }
+  str[len] = '\0';
   if (len > 0) {
     wungetc(c, f);
     if (is_num) {
@@ -182,6 +183,7 @@ token read_token(tracked_file *f) {
       }
 
       // No match with keywords, identifier
+      str[len] == '\0';
       t.val.str = str;
       t.type = t_identifier;
       return t;
