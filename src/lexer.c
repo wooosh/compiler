@@ -24,7 +24,7 @@ char *token_str(token t) {
     snprintf(num, len, "%d", t.val.integer);
     return num;
   case t_identifier:
-    return t.val.str->data;
+    return t.val.str.data;
   case t_return:
     return "return";
   case t_EOF:
@@ -149,7 +149,8 @@ token read_token(tracked_file *f) {
   wungetc(c, f);
 
   // Read identifier/keyword/number
-  vec *str = v_init(sizeof(char));
+  vec_char_t str;
+  vec_init(&str);
   bool is_num = true;
 
   // @Todo: eof handling
@@ -159,19 +160,19 @@ token read_token(tracked_file *f) {
     // @Todo: floats
     if (is_num && !isdigit(c))
       is_num = false;
-    v_push(str, c);
+    vec_push(&str, c);
   }
-  v_set(str, str->len, '\0');
-  if (str->len > 0) {
+  str.data[str.length] = '\0';
+  if (str.length > 0) {
     wungetc(c, f);
     if (is_num) {
       // @Todo: read into unsigned variable, and negate if first char is '-'
-      sscanf(str, "%d", &t.val.integer);
+      sscanf(str.data, "%d", &t.val.integer);
       t.type = t_literal;
       return t;
     } else {
       // Check if keyword
-      if (strcmp("return", str) == 0) {
+      if (strcmp("return", str.data) == 0) {
         t.type = t_return;
         return t;
       }
@@ -187,21 +188,26 @@ token read_token(tracked_file *f) {
   exit(1);
 }
 
-vec *lex(char *filename) {
+vec_token lex(char *filename) {
   tracked_file f = {fopen(filename, "rb"), filename, 1, 1, 0};
   if (f.f == NULL)
     perror("lexer");
 
-  vec *tokens = v_init(sizeof(token));
+  vec_token tokens;
+  vec_init(&tokens);
+  
   token t;
   do {
     t = read_token(&f);
     t.pos.len = f.col - t.pos.col;
-    v_push(tokens, &t);
+    vec_push(&tokens, t);
+  } while (t.type != t_EOF);
 
+  for (int i=0; i<tokens.length; i++) {
+    t = tokens.data[i];
     printf("%s:%zu:%zu: %s\n", t.pos.filename, t.pos.row, t.pos.col,
            token_str(t));
-  } while (t.type != t_EOF);
+  }
 
   fclose(f.f);
   return tokens;

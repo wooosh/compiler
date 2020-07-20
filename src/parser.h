@@ -58,5 +58,5 @@ struct function_list {
   function* functions;
 };
 
-struct function_list parse(token* tokens);
+struct function_list parse(vec_token tokens);
 #endif

@@ -158,7 +158,7 @@ void print_expression(expression e) {
     printf(")");
     break;
   case e_variable:
-    printf(e.val.tok.val.str);
+    printf(e.val.tok.val.str.data);
     break;
   default:
     printf("???\n");
@@ -167,10 +167,10 @@ void print_expression(expression e) {
 
 // @Cleanup: use token_str
 void print_function(function fn) {
-  printf("\nname: %s\nreturn type: %s\nparams:\n", fn.name.val.str,
-         fn.return_type.val.str);
+  printf("\nname: %s\nreturn type: %s\nparams:\n", fn.name.val.str.data,
+         fn.return_type.val.str.data);
   for (int i = 0; i < fn.params_len; i++) {
-    printf("  %s %s\n", fn.params[i].type.val.str, fn.params[i].name.val.str);
+    printf("  %s %s\n", fn.params[i].type.val.str.data, fn.params[i].name.val.str.data);
   }
   for (int i = 0; i < fn.body_len; i++) {
     print_expression(fn.body[i]);
@@ -179,9 +179,9 @@ void print_function(function fn) {
 }
 
 // @Bug: handle EOF
-struct function_list parse(token* tokens) {
+struct function_list parse(vec_token tokens) {
   // @Cleanup: super ugly
-  token_buf tb_pre = {tokens, 0};
+  token_buf tb_pre = {(token*)tokens.data, 0};
   token_buf* tb = &tb_pre;
   // Continually try to parse functions
   token t;
