@@ -19,8 +19,6 @@ char *token_str(token t) {
     return "}";
   case t_comma:
     return ",";
-  case t_semicolon:
-    return ";";
   case t_literal:;
     size_t len = snprintf(NULL, 0, "%d", t.val.integer) + 1;
     char *num = malloc(len);
@@ -28,6 +26,8 @@ char *token_str(token t) {
     return num;
   case t_identifier:
     return t.val.str;
+  case t_return:
+    return "return";
   case t_EOF:
     return "EOF";
   default:
@@ -47,8 +47,6 @@ char *token_type_str(enum token_type t) {
     return "'}'";
   case t_comma:
     return "','";
-  case t_semicolon:
-    return "';'";
   case t_literal:
     return "integer literal";
   case t_identifier:
@@ -109,7 +107,7 @@ char *token_location(token t) {
   size_t len =
       snprintf(NULL, 0, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col) + 1;
   char *buf = malloc(len);
-  snprintf(buf, len, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col);
+  snprintf(buf, len - 1, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col);
   return buf;
 }
 
@@ -134,9 +132,6 @@ token read_token(tracked_file *f) {
   }
 
   switch (c) {
-  case ';':
-    t.type = t_semicolon;
-    return t;
   case ',':
     t.type = t_comma;
     return t;
@@ -183,13 +178,20 @@ token read_token(tracked_file *f) {
       t.type = t_literal;
       return t;
     } else {
+      // Check if keyword
+      if (strcmp("return", str) == 0) {
+        t.type = t_return;
+        return t;
+      }
+        
+      // No match with keywords, identifier
       t.val.str = str;
       t.type = t_identifier;
       return t;
     }
-    // @Todo: keywords
   }
 
+  // @Todo: panic
   printf("%c", c);
   wgetc(f); // for debug so we don't loop forever
 }

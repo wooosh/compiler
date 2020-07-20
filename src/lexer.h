@@ -4,10 +4,8 @@
 
 // @TODO: move tokens into own file(s)
 
-enum keyword { k_return };
-
 enum token_type {
-  t_keyword,
+  t_return,
   t_identifier,
   t_literal, // only numbers for now, TODO: split into multiple types
   t_lparen,
@@ -15,7 +13,6 @@ enum token_type {
   t_lbrace,
   t_rbrace,
   t_comma,
-  t_semicolon,
   t_EOF,
   t_unknown
 };
@@ -35,7 +32,6 @@ typedef struct token {
   union {
     char *str;            // identifer, str literal
     int integer;          // num literal
-    enum keyword keyword; // keyword
   } val;
 } token;
 
