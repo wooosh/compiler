@@ -5,8 +5,6 @@
 
 #include "lexer.h"
 
-// TODO: consider whether or not tokens should the text they represent
-
 char *token_str(token t) {
   switch (t.type) {
   case t_lparen:
@@ -182,7 +180,7 @@ token read_token(tracked_file *f) {
         t.type = t_return;
         return t;
       }
-        
+
       // No match with keywords, identifier
       t.val.str = str;
       t.type = t_identifier;

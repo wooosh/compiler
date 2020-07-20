@@ -30,8 +30,8 @@ typedef struct token {
   enum token_type type;
   token_pos pos;
   union {
-    char *str;            // identifer, str literal
-    int integer;          // num literal
+    char *str;   // identifer, str literal
+    int integer; // num literal
   } val;
 } token;
 
