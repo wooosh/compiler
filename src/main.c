@@ -17,8 +17,8 @@ token tb_pop(token_buf* tb) {
 
 typedef struct function {
     // @Todo: parameters
-    // @Todo: return value
-    char* name;
+    token return_value;
+    token name;
 } function;
 
 void print_token_loc(token t) {
@@ -101,10 +101,9 @@ void parse(token_buf* tb) {
     
     while(1) {
     	// @Todo: add parse_type()
-        try_pop_type(tb, t, "return type", t_identifier);
-        printf("%s\n", t.val.str);
-        try_pop_type(tb, t, "function name", t_identifier);
-        printf("%s\n", t.val.str);
+    	function fn;
+        try_pop_type(tb, fn.return_value, "return type", t_identifier);
+        try_pop_type(tb, fn.name, "function name", t_identifier);
         try_pop_type(tb, t, "opening parenthesis", t_lparen); // opening paren
         do {
         	token param_type, param_name;
@@ -113,6 +112,7 @@ void parse(token_buf* tb) {
 		printf("param: %s %s\n", param_type.val.str, param_name.val.str);
        		try_pop_types(tb, t, NULL, t_comma, t_rparen);
        	} while (t.type != t_rparen);
+       	try_pop_type(tb, t, NULL, t_lbrace);
     }
 }
 

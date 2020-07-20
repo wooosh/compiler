@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #include "lexer.h"
 
@@ -135,36 +136,37 @@ token read_token(tracked_file* f) {
   }
   
   wungetc(c, f);
-
-  // TODO: move this under identifiers, and check if the "identifier" starts
-  // with a digit, this way we still maintain our file position with wgetc
-  // Read number
-  if (c == '-' || isdigit(c)) {
-    // TODO: error handling
   
-    int n = fscanf(f->f, "%d", &t.val.integer);
-    t.type = t_literal;
-    return t;
-  }
-  
-  // Read identifier/keyword
-  char* identifier = malloc(1);
+  // Read identifier/keyword/number
+  char* str = malloc(1);
   size_t size = 1;
   size_t len = 0;
+  bool is_num = true;
+  
   // TODO: eof handling
   while ((c = wgetc(f)) && (isalnum(c) || c == '_')) {
     if (len == size) {
       size *=2;
-      identifier = realloc(identifier, size);
+      str = realloc(str, size);
     }
-    identifier[len] = c;
+    // @Todo: prevent identifiers that start with a number
+    // @Todo: handle hex, binary, negatives etc
+    if (is_num && !isdigit(c)) is_num = false;
+    str[len] = c;
     len++;
   }
   if (len > 0) {
     wungetc(c, f);
-    t.val.str = identifier;
-    t.type = t_identifier;
-    return t;
+	  if (is_num) {
+	  	sscanf(str, "%d", &t.val.integer);
+	  	t.type = t_literal;
+	  	return t;
+	  } else {
+	    t.val.str = str;
+	    t.type = t_identifier;
+	    return t;
+	  }
+	 // @Todo: keywords
   }
   
   printf("%c", c);
