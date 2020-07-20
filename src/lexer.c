@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "lexer.h"
+#include "vec.h"
 
 char *token_str(token t) {
   switch (t.type) {
@@ -23,7 +24,7 @@ char *token_str(token t) {
     snprintf(num, len, "%d", t.val.integer);
     return num;
   case t_identifier:
-    return t.val.str;
+    return t.val.str->data;
   case t_return:
     return "return";
   case t_EOF:
@@ -148,27 +149,20 @@ token read_token(tracked_file *f) {
   wungetc(c, f);
 
   // Read identifier/keyword/number
-  char *str = malloc(1);
-  size_t size = 1;
-  size_t len = 0;
+  vec *str = v_init(sizeof(char));
   bool is_num = true;
 
   // @Todo: eof handling
   while ((c = wgetc(f)) && (isalnum(c) || c == '_')) {
-    if (len == size) {
-      size *= 2;
-      str = realloc(str, size);
-    }
     // @Todo: prevent identifiers that start with a number
     // @Todo: handle hex, binary, negatives etc
     // @Todo: floats
     if (is_num && !isdigit(c))
       is_num = false;
-    str[len] = c;
-    len++;
+    v_push(str, c);
   }
-  str[len] = '\0';
-  if (len > 0) {
+  v_set(str, str->len, '\0');
+  if (str->len > 0) {
     wungetc(c, f);
     if (is_num) {
       // @Todo: read into unsigned variable, and negate if first char is '-'
@@ -183,7 +177,6 @@ token read_token(tracked_file *f) {
       }
 
       // No match with keywords, identifier
-      str[len] == '\0';
       t.val.str = str;
       t.type = t_identifier;
       return t;
@@ -194,25 +187,17 @@ token read_token(tracked_file *f) {
   exit(1);
 }
 
-token *lex(char *filename) {
+vec *lex(char *filename) {
   tracked_file f = {fopen(filename, "rb"), filename, 1, 1, 0};
   if (f.f == NULL)
     perror("lexer");
 
-  size_t size = 1;
-  size_t len = 0;
-  token *tokens = malloc(size * sizeof(token));
+  vec *tokens = v_init(sizeof(token));
   token t;
   do {
     t = read_token(&f);
     t.pos.len = f.col - t.pos.col;
-    if (len == size) {
-      size *= 2;
-      tokens = realloc(tokens, size * sizeof(token));
-    }
-
-    tokens[len] = t;
-    len++;
+    v_push(tokens, &t);
 
     printf("%s:%zu:%zu: %s\n", t.pos.filename, t.pos.row, t.pos.col,
            token_str(t));

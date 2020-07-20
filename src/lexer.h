@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "vec.h"
 
 // @TODO: move tokens into own file(s)
 
@@ -33,7 +34,7 @@ typedef struct token {
   enum token_type type;
   token_pos pos;
   union {
-    char *str;   // identifer, str literal
+    vec *str;   // identifer, str literal
     int integer; // num literal
   } val;
 } token;
@@ -41,6 +42,6 @@ typedef struct token {
 char *token_location(token t);
 char *token_str(token t);
 char *token_type_str(enum token_type t);
-token *lex(char *filename);
+vec *lex(char *filename);
 
 #endif
