@@ -4,5 +4,6 @@ int magic_function(int a) {
 }
 
 void main(int argc) {
+    add(magic_function(add(1, 2)), 3)
     return magic_function(argc, 42)
 }

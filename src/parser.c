@@ -60,11 +60,12 @@ int compare_types(token t, enum token_type ts[], char *desc) {
   return 0;
 }
 
+// @Todo: remove the macros
 // Sets T to the token
 #define try_pop_types(TB, T, DESC, TYPES...)                                   \
   T = tb_pop(TB);                                                              \
   if (!compare_types(T, (enum token_type[]){TYPES, t_EOF}, DESC))              \
-    return;
+    exit(1);
 #define try_pop_type try_pop_types
 
 expression parse_expression(token_buf *tb, bool statement);
@@ -76,18 +77,11 @@ expression parse_fn_call(token_buf *tb) {
   token t = tb_pop(tb);
   fnc->name = t;
   tb_pop(tb); // skip lparen
-  fnc->params_len = 0;
+  vec_init(&fnc->params);
   if (tb_pop(tb).type != t_rparen) {
     tb_unpop(tb);
-    size_t params_size = 1;
-    fnc->params = malloc(params_size * sizeof(struct expression));
     do {
-      if (fnc->params_len == params_size) {
-        params_size *= 2;
-        fnc->params = realloc(fnc->params, params_size * sizeof(expression));
-      }
-      fnc->params[fnc->params_len] = parse_expression(tb, false);
-      fnc->params_len++;
+      vec_push(&fnc->params, parse_expression(tb, false));
       try_pop_types(tb, t, NULL, t_comma, t_rparen);
     } while (t.type != t_rparen);
     e.val.fn_call = fnc;
@@ -121,7 +115,7 @@ expression parse_expression(token_buf *tb, bool statement) {
     if (tb->tokens[tb->idx].type == t_lparen) { // fn call
       tb_unpop(tb);
       return parse_fn_call(tb);
-    } else { // variable
+    } else { // variable  
       if (statement) statement_mode_error(statement, t, "variable reference");
       e.type = e_variable;
       e.val.tok = t;
@@ -150,9 +144,9 @@ void print_expression(expression e) {
     break;
   case e_fn_call:
     printf("%s(", e.val.fn_call->name.val.str);
-    for (int i = 0; i < e.val.fn_call->params_len; i++) {
-      print_expression(e.val.fn_call->params[i]);
-      if (i < e.val.fn_call->params_len - 1)
+    for (int i = 0; i < e.val.fn_call->params.length; i++) {
+      print_expression(e.val.fn_call->params.data[i]);
+      if (i < e.val.fn_call->params.length - 1)
         printf(", ");
     }
     printf(")");
@@ -169,50 +163,44 @@ void print_expression(expression e) {
 void print_function(function fn) {
   printf("\nname: %s\nreturn type: %s\nparams:\n", fn.name.val.str.data,
          fn.return_type.val.str.data);
-  for (int i = 0; i < fn.params_len; i++) {
-    printf("  %s %s\n", fn.params[i].type.val.str.data, fn.params[i].name.val.str.data);
+  for (int i = 0; i < fn.params.length; i++) {
+    printf("  %s %s\n", fn.params.data[i].type.val.str.data, fn.params.data[i].name.val.str.data);
   }
-  for (int i = 0; i < fn.body_len; i++) {
-    print_expression(fn.body[i]);
+  for (int i = 0; i < fn.body.length; i++) {
+    print_expression(fn.body.data[i]);
     printf("\n");
   }
 }
 
 // @Bug: handle EOF
-struct function_list parse(vec_token tokens) {
+vec_function parse(vec_token tokens) {
   // @Cleanup: super ugly
   token_buf tb_pre = {(token*)tokens.data, 0};
   token_buf* tb = &tb_pre;
   // Continually try to parse functions
   token t;
   
-  size_t fl_size = 1;
-  struct function_list fl =  {0, malloc(sizeof(function) * fl_size)};
+  vec_function fl;
+  vec_init(&fl);
   
   while (tb->tokens[tb->idx].type != t_EOF) {
     function fn;
+    vec_init(&fn.params);
     try_pop_type(tb, fn.return_type, "return type", t_identifier);
     try_pop_type(tb, fn.name, "function name", t_identifier);
     try_pop_type(tb, t, "opening parenthesis", t_lparen); // opening paren
 
     // if next token is not closing paren, read params
-    fn.params_len = 0;
     if (tb_pop(tb).type != t_rparen) {
       tb_unpop(tb);
       // Read parameters
-      size_t params_size = 1;
-      fn.params = malloc(params_size * sizeof(struct param_pair));
+      struct param_pair p;
       do {
-        if (fn.params_len == params_size) {
-          params_size *= 2;
-          fn.params =
-              realloc(fn.params, params_size * sizeof(struct param_pair));
-        }
-        try_pop_type(tb, fn.params[fn.params_len].type, "parameter type",
+        try_pop_type(tb, p.type, "parameter type",
                      t_identifier);
-        try_pop_type(tb, fn.params[fn.params_len].name, "parameter name",
+        try_pop_type(tb, p.name, "parameter name",
                      t_identifier);
-        fn.params_len++;
+        vec_push(&fn.params, p);
         try_pop_types(tb, t, NULL, t_comma, t_rparen);
       } while (t.type != t_rparen);
     }
@@ -220,25 +208,13 @@ struct function_list parse(vec_token tokens) {
     // Start parsing the function body
     try_pop_type(tb, t, NULL, t_lbrace);
     // @Cleanup: maybe restructure into do while?
-    size_t body_size = 1;
-    fn.body = malloc(sizeof(expression) * body_size);
-    fn.body_len = 0;
+    vec_init(&fn.body);
     while (tb->tokens[tb->idx].type != t_rbrace) {
-      if (fn.body_len == body_size) {
-        body_size *= 2;
-        fn.body = realloc(fn.body, body_size * sizeof(expression));
-      }
-      fn.body[fn.body_len] = parse_expression(tb, true);
-      fn.body_len++;
+      vec_push(&fn.body, parse_expression(tb, true));
     }
     tb_pop(tb);
     print_function(fn);
-    if (fl.len == fl_size) {
-        fl_size *= 2;
-        fl.functions = realloc(fl.functions, fl_size * sizeof(function));
-    }
-    fl.functions[fl.len] = fn;
-    fl.len++;
+    vec_push(&fl, fn);
   }
   return fl;
 }

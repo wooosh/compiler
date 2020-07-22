@@ -2,11 +2,6 @@
 #define PARSER_H
 
 #include "lexer.h"
-struct param_pair {
-  token name;
-  token type;
-};
-
 enum expression_type {
   // statements
   e_fn_call,
@@ -37,26 +32,26 @@ typedef struct expression {
     struct fn_call *fn_call;
   } val;
 } expression;
+typedef vec_t(expression) vec_expression;
 
 struct fn_call {
   token name;
-  size_t params_len;
-  expression *params;
+  vec_expression params;
 };
 
+struct param_pair {
+  token name;
+  token type;
+};
+
+typedef vec_t(struct param_pair) vec_param_pair;
 typedef struct function {
   token return_type;
   token name;
-  size_t params_len;
-  struct param_pair *params;
-  size_t body_len;
-  expression* body;
+  vec_param_pair params;
+  vec_expression body;
 } function;
 
-struct function_list {
-  size_t len;
-  function* functions;
-};
-
-struct function_list parse(vec_token tokens);
+typedef vec_t(function) vec_function;
+vec_function parse(vec_token tokens);
 #endif
