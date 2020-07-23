@@ -84,7 +84,7 @@ expression parse_fn_call(token_buf *tb) {
       vec_push(&fnc->params, parse_expression(tb, false));
       try_pop_types(tb, t, NULL, t_comma, t_rparen);
     } while (t.type != t_rparen);
-    e.val.fn_call = fnc;
+    e.fn_call = fnc;
     return e;
   }
 }
@@ -109,7 +109,7 @@ expression parse_expression(token_buf *tb, bool statement) {
     e.type = e_return;
     expression *return_value = malloc(sizeof(expression));
     *return_value = parse_expression(tb, false);
-    e.val.exp = return_value;
+    e.exp = return_value;
     return e;
   case t_identifier:                            // fn call or var
     if (tb->tokens[tb->idx].type == t_lparen) { // fn call
@@ -118,13 +118,13 @@ expression parse_expression(token_buf *tb, bool statement) {
     } else { // variable  
       if (statement) statement_mode_error(statement, t, "variable reference");
       e.type = e_variable;
-      e.val.tok = t;
+      e.tok = t;
       return e;
     }
   case t_literal:
     if (statement) statement_mode_error(statement, t, "integer literal");
     e.type = e_integer_literal;
-    e.val.tok = t;
+    e.tok = t;
     return e;
   default:;
   }
@@ -137,22 +137,22 @@ void print_expression(expression e) {
   switch (e.type) {
   case e_return:
     printf("return ");
-    print_expression(*e.val.exp);
+    print_expression(*e.exp);
     break;
   case e_integer_literal:
-    printf("%d", e.val.tok.val.integer);
+    printf("%d", e.tok.integer);
     break;
   case e_fn_call:
-    printf("%s(", e.val.fn_call->name.val.str);
-    for (int i = 0; i < e.val.fn_call->params.length; i++) {
-      print_expression(e.val.fn_call->params.data[i]);
-      if (i < e.val.fn_call->params.length - 1)
+    printf("%s(", e.fn_call->name.str);
+    for (int i = 0; i < e.fn_call->params.length; i++) {
+      print_expression(e.fn_call->params.data[i]);
+      if (i < e.fn_call->params.length - 1)
         printf(", ");
     }
     printf(")");
     break;
   case e_variable:
-    printf(e.val.tok.val.str.data);
+    printf(e.tok.str.data);
     break;
   default:
     printf("???\n");
@@ -161,17 +161,16 @@ void print_expression(expression e) {
 
 // @Cleanup: use token_str
 void print_function(function fn) {
-  printf("\nname: %s\nreturn type: %s\nparams:\n", fn.name.val.str.data,
-         fn.return_type.val.str.data);
+  printf("\nname: %s\nreturn type: %s\nparams:\n", fn.name.str.data,
+         fn.return_type_tok.str.data);
   for (int i = 0; i < fn.params.length; i++) {
-    printf("  %s %s\n", fn.params.data[i].type.val.str.data, fn.params.data[i].name.val.str.data);
+    printf("  %s %s\n", fn.params.data[i].type_tok.str.data, fn.params.data[i].name.str.data);
   }
   for (int i = 0; i < fn.body.length; i++) {
     print_expression(fn.body.data[i]);
     printf("\n");
   }
 }
-
 // @Bug: handle EOF
 vec_function parse(vec_token tokens) {
   // @Cleanup: super ugly
@@ -186,7 +185,7 @@ vec_function parse(vec_token tokens) {
   while (tb->tokens[tb->idx].type != t_EOF) {
     function fn;
     vec_init(&fn.params);
-    try_pop_type(tb, fn.return_type, "return type", t_identifier);
+    try_pop_type(tb, fn.return_type_tok, "return type", t_identifier);
     try_pop_type(tb, fn.name, "function name", t_identifier);
     try_pop_type(tb, t, "opening parenthesis", t_lparen); // opening paren
 
@@ -196,7 +195,7 @@ vec_function parse(vec_token tokens) {
       // Read parameters
       struct param_pair p;
       do {
-        try_pop_type(tb, p.type, "parameter type",
+        try_pop_type(tb, p.type_tok, "parameter type",
                      t_identifier);
         try_pop_type(tb, p.name, "parameter name",
                      t_identifier);

@@ -34,7 +34,7 @@ typedef struct token {
   union {
     vec_char_t str;   // identifer, str literal
     int integer; // num literal
-  } val;
+  };
 } token;
 
 typedef vec_t(token) vec_token;

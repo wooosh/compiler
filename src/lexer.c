@@ -19,12 +19,12 @@ char *token_str(token t) {
   case t_comma:
     return ",";
   case t_literal:;
-    size_t len = snprintf(NULL, 0, "%d", t.val.integer) + 1;
+    size_t len = snprintf(NULL, 0, "%d", t.integer) + 1;
     char *num = malloc(len);
-    snprintf(num, len, "%d", t.val.integer);
+    snprintf(num, len, "%d", t.integer);
     return num;
   case t_identifier:
-    return t.val.str.data;
+    return t.str.data;
   case t_return:
     return "return";
   case t_EOF:
@@ -167,7 +167,7 @@ token read_token(tracked_file *f) {
     wungetc(c, f);
     if (is_num) {
       // @Todo: read into unsigned variable, and negate if first char is '-'
-      sscanf(str.data, "%d", &t.val.integer);
+      sscanf(str.data, "%d", &t.integer);
       t.type = t_literal;
       return t;
     } else {
@@ -178,7 +178,7 @@ token read_token(tracked_file *f) {
       }
 
       // No match with keywords, identifier
-      t.val.str = str;
+      t.str = str;
       t.type = t_identifier;
       return t;
     }
