@@ -30,15 +30,10 @@ typedef struct expression {
   union {
     struct expression *exp; // return value
     token tok;
-    struct fn_call *fn_call;
+    struct fn_call *fn_call; // @Todo: figure out why this is a pointer
   };
 } expression;
 typedef vec_t(expression) vec_expression;
-
-struct fn_call {
-  token name;
-  vec_expression params;
-};
 
 struct param_pair {
   token name;
@@ -59,4 +54,10 @@ typedef struct function {
 
 typedef vec_t(function) vec_function;
 vec_function parse(vec_token tokens);
+
+struct fn_call {
+  token name;
+  vec_expression params;
+  function* fn;
+};
 #endif

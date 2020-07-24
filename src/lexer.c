@@ -104,9 +104,9 @@ void set_token_len(tracked_file *tf, token *t) {}
 
 char *token_location(token t) {
   size_t len =
-      snprintf(NULL, 0, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col) + 1;
+      snprintf(NULL, 0, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col+1) + 1;
   char *buf = malloc(len);
-  snprintf(buf, len - 1, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col);
+  snprintf(buf, len, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col+1);
   return buf;
 }
 
