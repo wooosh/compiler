@@ -1,0 +1,2 @@
+p=${1%/}
+./cc "$p/input.c" 2>&1 > "$p/output"

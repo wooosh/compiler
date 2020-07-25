@@ -1,0 +1,125 @@
+tests/test_example/input.c:1:1: sint
+tests/test_example/input.c:1:6: add
+tests/test_example/input.c:1:9: (
+tests/test_example/input.c:1:10: sint
+tests/test_example/input.c:1:15: a
+tests/test_example/input.c:1:16: ,
+tests/test_example/input.c:1:18: sint
+tests/test_example/input.c:1:23: b
+tests/test_example/input.c:1:24: ,
+tests/test_example/input.c:1:26: sint
+tests/test_example/input.c:1:31: c
+tests/test_example/input.c:1:32: )
+tests/test_example/input.c:1:34: {
+tests/test_example/input.c:1:35: return
+tests/test_example/input.c:1:42: 3
+tests/test_example/input.c:1:43: }
+tests/test_example/input.c:2:1: sint
+tests/test_example/input.c:2:6: add
+tests/test_example/input.c:2:9: (
+tests/test_example/input.c:2:10: sint
+tests/test_example/input.c:2:15: a
+tests/test_example/input.c:2:16: ,
+tests/test_example/input.c:2:18: sint
+tests/test_example/input.c:2:23: b
+tests/test_example/input.c:2:24: )
+tests/test_example/input.c:2:26: {
+tests/test_example/input.c:2:27: return
+tests/test_example/input.c:2:34: 2
+tests/test_example/input.c:2:35: }
+tests/test_example/input.c:3:1: sint
+tests/test_example/input.c:3:6: magic_function
+tests/test_example/input.c:3:20: (
+tests/test_example/input.c:3:21: sint
+tests/test_example/input.c:3:26: a
+tests/test_example/input.c:3:27: )
+tests/test_example/input.c:3:29: {
+tests/test_example/input.c:4:5: add
+tests/test_example/input.c:4:8: (
+tests/test_example/input.c:4:9: 42
+tests/test_example/input.c:4:11: ,
+tests/test_example/input.c:4:13: a
+tests/test_example/input.c:4:14: )
+tests/test_example/input.c:5:1: }
+tests/test_example/input.c:7:1: void
+tests/test_example/input.c:7:6: main
+tests/test_example/input.c:7:10: (
+tests/test_example/input.c:7:11: sint
+tests/test_example/input.c:7:16: argc
+tests/test_example/input.c:7:20: )
+tests/test_example/input.c:7:22: {
+tests/test_example/input.c:8:5: add
+tests/test_example/input.c:8:8: (
+tests/test_example/input.c:8:9: magic_function
+tests/test_example/input.c:8:23: (
+tests/test_example/input.c:8:24: add
+tests/test_example/input.c:8:27: (
+tests/test_example/input.c:8:28: 1
+tests/test_example/input.c:8:29: ,
+tests/test_example/input.c:8:31: 2
+tests/test_example/input.c:8:32: )
+tests/test_example/input.c:8:33: )
+tests/test_example/input.c:8:34: ,
+tests/test_example/input.c:8:36: 3
+tests/test_example/input.c:8:37: )
+tests/test_example/input.c:9:5: return
+tests/test_example/input.c:9:12: magic_function
+tests/test_example/input.c:9:26: (
+tests/test_example/input.c:9:27: argc
+tests/test_example/input.c:9:31: ,
+tests/test_example/input.c:9:33: 42
+tests/test_example/input.c:9:35: )
+tests/test_example/input.c:10:1: }
+tests/test_example/input.c:11:1: EOF
+
+name: add
+return type: sint
+params:
+  sint a
+  sint b
+  sint c
+return 3
+
+name: add
+return type: sint
+params:
+  sint a
+  sint b
+return 2
+
+name: magic_function
+return type: sint
+params:
+  sint a
+add(42, a)
+
+name: main
+return type: void
+params:
+  sint argc
+add(magic_function(add(1, 2)), 3)
+return magic_function(argc, 42)
+sint
+sint
+sint
+sint
+sint
+sint
+sint
+sint
+sint
+void
+sint
+unhandled type when reading expression
+unhandled type when reading expression
+unhandled type when reading expression
+unhandled type when reading expression
+warning: automatically coercing unknown type
+warning: automatically coercing unknown type
+unhandled type when reading expression
+unhandled type when reading expression
+warning: automatically coercing unknown type
+warning: automatically coercing unknown type
+unhandled type when reading expression
+warning: automatically coercing unknown type
+unhandled type when reading expression
