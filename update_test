@@ -1,2 +1,6 @@
 p=${1%/}
-./cc "$p/input.c" 2>&1 > "$p/output"
+if [ -e "$p/cmd" ]; then
+  "$p/cmd" 2>&1 > "$1/output"
+else
+  ./cc "$p/input.c" 2>&1 > "$1/output"
+fi

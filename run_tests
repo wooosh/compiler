@@ -1,19 +1,44 @@
 #!/bin/sh
 
-CMD="./cc"
-STATUS=0
+passed=0
+failed=0
 
-test() {
-	$CMD "$1/input.c" 2>&1 > "$1/last_output"
-	cmp "$1/last_output" "$1/output" > /dev/null
-	ret=$?
-	if [ $ret = 0 ]; then
-		echo "PASS: $1"
-    else
-		echo "FAIL: $1"
-		STATUS=1
-	fi
+_test() {
+	# check if custom command is provided
+  if [ -e "$1/cmd" ]; then
+    "$1/cmd" 2>&1 > "$1/last_output"
+  else
+    ./cc "$1/input.c" 2>&1 > "$1/last_output"
+  fi
+  
+  testname="$(basename $1)"
+  if cmp "$1/last_output" "$1/output" >/dev/null; then
+    printf "\033[42m PASS \033[0m $testname\n"
+    passed=$((passed+1))
+  else
+    printf "\033[41m FAIL \033[0m $testname\n"
+    status=1
+    failed=$((passed+1))
+  fi
 }
 
-for test_folder in tests/*; do test "$test_folder"; done
-exit "$STATUS"
+for test_dir in tests/*; do 
+    _test "$test_dir"
+done
+
+if [ $failed -ne 0 ]; then
+  echo
+  printf "  \033[41m                                           \033[0m\n"
+  printf "  \033[41m                                           \033[0m\n"
+  printf "  \033[41m           !!! FAILING TESTS !!!           \033[0m\n"
+  printf "  \033[41m                                           \033[0m\n"
+  printf "  \033[41m                                           \033[0m\n"
+fi
+
+echo
+echo "RESULTS"
+echo "  PASSED: $passed"
+echo "  FAILED: $failed"
+echo
+
+exit "${status:-0}"
