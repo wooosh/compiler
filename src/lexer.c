@@ -103,10 +103,11 @@ int wungetc(char c, tracked_file *t) {
 void set_token_len(tracked_file *tf, token *t) {}
 
 char *token_location(token t) {
-  size_t len =
-      snprintf(NULL, 0, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col+1) + 1;
+  size_t len = snprintf(NULL, 0, "%s:%zu:%zu", t.pos.filename, t.pos.row,
+                        t.pos.col + 1) +
+               1;
   char *buf = malloc(len);
-  snprintf(buf, len, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col+1);
+  snprintf(buf, len, "%s:%zu:%zu", t.pos.filename, t.pos.row, t.pos.col + 1);
   return buf;
 }
 
@@ -195,7 +196,7 @@ vec_token lex(char *filename) {
 
   vec_token tokens;
   vec_init(&tokens);
-  
+
   token t;
   do {
     t = read_token(&f);
@@ -203,7 +204,7 @@ vec_token lex(char *filename) {
     vec_push(&tokens, t);
   } while (t.type != t_EOF);
 
-  for (int i=0; i<tokens.length; i++) {
+  for (int i = 0; i < tokens.length; i++) {
     t = tokens.data[i];
     printf("%s:%zu:%zu: %s\n", t.pos.filename, t.pos.row, t.pos.col,
            token_str(t));

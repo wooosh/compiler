@@ -1,10 +1,10 @@
 #ifndef LEXER_H
 #define LEXER_H
 
+#include "vec.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "vec.h"
 
 enum token_type {
   t_return,
@@ -32,8 +32,8 @@ typedef struct token {
   enum token_type type;
   token_pos pos;
   union {
-    vec_char_t str;   // identifer, str literal
-    int integer; // num literal
+    vec_char_t str; // identifer, str literal
+    int integer;    // num literal
   };
 } token;
 

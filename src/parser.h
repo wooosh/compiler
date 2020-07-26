@@ -1,8 +1,8 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "type.h"
 #include "lexer.h"
+#include "type.h"
 enum expression_type {
   // statements
   e_fn_call,
@@ -45,9 +45,9 @@ typedef vec_t(struct param_pair) vec_param_pair;
 typedef struct function {
   type return_type;
   token return_type_tok;
-  
+
   token name;
-  
+
   vec_param_pair params;
   vec_expression body;
 } function;
@@ -58,6 +58,6 @@ vec_function parse(vec_token tokens);
 struct fn_call {
   token name;
   vec_expression params;
-  function* fn;
+  function *fn;
 };
 #endif
