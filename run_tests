@@ -22,23 +22,28 @@ _test() {
   fi
 }
 
+printf "\033[100m TESTS                                         \033[0m\n"
+
 for test_dir in tests/*; do 
     _test "$test_dir"
 done
 
+printf "\033[100m RESULTS                                       \033[0m\n"
+printf " PASSED: %04d\n" $passed
+printf " FAILED: %04d                           \033[0m\n" $failed
+
+printf "\033[100m STATUS                                        \033[0m\n"
 if [ $failed -ne 0 ]; then
-  echo
-  printf "  \033[41m                                           \033[0m\n"
-  printf "  \033[41m                                           \033[0m\n"
-  printf "  \033[41m           !!! FAILING TESTS !!!           \033[0m\n"
-  printf "  \033[41m                                           \033[0m\n"
-  printf "  \033[41m                                           \033[0m\n"
+  printf "\033[41m                                               \033[0m\n"
+  printf "\033[41m             !!! FAILING TESTS !!!             \033[0m\n"
+  printf "\033[41m                                               \033[0m\n"
+else
+  printf "\033[42m                                               \033[0m\n"
+  printf "\033[42m                 ALL PASSISNG                  \033[0m\n"
+  printf "\033[42m                                               \033[0m\n"
 fi
 
-echo
-echo "RESULTS"
-echo "  PASSED: $passed"
-echo "  FAILED: $failed"
-echo
 
 exit "${status:-0}"
+PASSED: 0000
+FAILED: 0000
