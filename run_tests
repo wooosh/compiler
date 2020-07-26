@@ -18,7 +18,7 @@ _test() {
   else
     printf "\033[41m FAIL \033[0m $testname\n"
     status=1
-    failed=$((passed+1))
+    failed=$((failed+1))
   fi
 }
 

@@ -1,6 +1,10 @@
+make
+
 p=${1%/}
 if [ -e "$p/cmd" ]; then
-  "$p/cmd" 2>&1 > "$1/output"
+  "$p/cmd" 2>&1 > "$p/output"
 else
   ./cc "$p/input.c" 2>&1 > "$1/output"
 fi
+
+cat "$p/output"
