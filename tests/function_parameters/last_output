@@ -25,3 +25,9 @@ void
 sint
 u8
 s32
+
+GLOBAL SCOPE:
+const my_fn
+STARTING LLVM CODE GEN:
+Generating my_fn
+result: 42

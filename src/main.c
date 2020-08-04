@@ -5,8 +5,49 @@
 
 #include "misc.h"
 #include "type.h"
+#include "vec.h"
 #include <stdbool.h>
+
+#include "llvm-c/Core.h"
+#include "llvm-c/ExecutionEngine.h"
+#include "llvm-c/Object.h"
+#include "llvm-c/Target.h"
+#include "llvm-c/Types.h"
+#include "llvm-c/Initialization.h"
+#include "llvm-c/TargetMachine.h"
+#include <llvm-c/Analysis.h>
+#include "llvm-c/Support.h"
+
 // @Todo: make lexical analysis output multiple errors
+enum symbol_type {
+  st_variable,
+  st_function
+};
+
+typedef struct symbol {
+  // @Todo: add definition location
+  bool is_const;
+  char* name;
+  type type;
+} symbol;
+
+typedef vec_t(struct symbol) vec_symbol;
+typedef struct parser_state {
+  vec_int_t scope_indexes;
+  vec_symbol symbol_stack;
+} parser_state;
+
+void enter_scope(parser_state* p) {
+  vec_push(&p->scope_indexes, p->symbol_stack.length);
+}
+
+void exit_scope(parser_state* p) {
+  p->symbol_stack.length = vec_last(&p->scope_indexes);
+  vec_pop(&p->scope_indexes);
+}
+
+symbol *get_symbol(parser_state *p, char* name);
+
 type parse_type(token tok) {
   type t;
   for (int i = 0; i < NUM_BUILTIN_TYPES; i++) {
@@ -35,23 +76,27 @@ bool coerces(expression e, type t) {
   switch (e.type) {
   case e_fn_call:
     return type_equal(e.fn_call->fn->return_type, t);
+  // @Todo: add casts to for non-sint's
+  case e_integer_literal:
+    return t.type == tt_sint;
   default:
     printf("warning: automatically coercing unknown type\n");
     return true;
   }
 }
 
-void read_expression(expression *e, vec_function ftable) {
+void read_expression(parser_state *p, expression *e) {
   switch (e->type) {
+  /*
   case e_fn_call: {
     // check if function exists
     struct fn_call *fnc = e->fn_call;
     token name = fnc->name;
 
     for (int i = 0; i < fnc->params.length; i++) {
-      read_expression(&fnc->params.data[i], ftable);
+      read_expression(p, &fnc->params.data[i], ftable);
     }
-
+    // @Todo: use symbol table instead of function table
     for (int i = 0; i < ftable.length; i++) {
       // @Todo: make symbol and function table be shared for lambdas and stuff
       if (strcmp(ftable.data[i].name.str.data, name.str.data) == 0) {
@@ -80,6 +125,12 @@ void read_expression(expression *e, vec_function ftable) {
     print_token_loc(name);
     exit(1);
     break;
+  }*/
+  case e_return:
+    return;
+  case e_integer_literal: {
+    // No type checking needed
+    return;
   }
   default:
     printf("unhandled type when reading expression\n");
@@ -87,22 +138,79 @@ void read_expression(expression *e, vec_function ftable) {
   }
 }
 
+typedef int* test;
+
 void analyse(vec_function fv) {
   // @Todo: create type tables
   // @Todo: create canonical symbol names for generics and multiple dispatch,
   // which function calls structs will contain a pointer to
+  parser_state p;
+  vec_init(&p.scope_indexes);
+  vec_init(&p.symbol_stack);
 
   // build function table
   for (int i = 0; i < fv.length; i++) {
     read_function_signature(&fv.data[i]);
+    // add function signature to symbol table
+    symbol s = {true, fv.data[i].name.str.data, {tt_fn, &fv.data[i]}};
+    vec_push(&p.symbol_stack, s);
+  }
+
+  // display global scope
+  printf("\nGLOBAL SCOPE:\n");
+  for (int i=0; i<p.symbol_stack.length; i++) {
+    symbol s = p.symbol_stack.data[i];
+    printf("%s %s\n", s.is_const ? "const" : "", s.name);
   }
 
   // validate functions & body
   for (int i = 0; i < fv.length; i++) {
     for (int j = 0; j < fv.data[i].body.length; j++) {
-      read_expression(&fv.data[i].body.data[j], fv);
+      read_expression(&p, &fv.data[i].body.data[j]);
     }
   }
+
+  printf("STARTING LLVM CODE GEN:\n");
+  // codegen
+  LLVMInitializeNativeAsmPrinter();
+  LLVMInitializeNativeTarget();
+  LLVMLoadLibraryPermanently("c");
+  
+  LLVMModuleRef module = LLVMModuleCreateWithName("main");
+  LLVMSetTarget(module, LLVMGetDefaultTargetTriple());
+  
+  // generate code for functions
+  for (int i=0; i<fv.length; i++) {
+    function fn_data = fv.data[i];
+    printf("Generating %s\n", fn_data.name.str.data);
+    // @Todo: parameters
+    LLVMTypeRef params[0] = {};
+    LLVMTypeRef functionType = LLVMFunctionType(LLVMInt32Type(), params, 0, 0);
+    
+    LLVMValueRef fn_llvm = LLVMAddFunction(module, fn_data.name.str.data, functionType);
+    LLVMBuilderRef builder = LLVMCreateBuilder();
+    LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(fn_llvm, "entry");
+    LLVMPositionBuilderAtEnd(builder, entryBlock);
+    LLVMBuildRet(builder, LLVMConstInt(LLVMInt32Type(), 42, true));
+    
+    char *error = NULL;
+    LLVMVerifyModule(module, LLVMAbortProcessAction, &error);
+    LLVMDisposeMessage(error);
+    LLVMDumpModule(module);
+    
+    LLVMExecutionEngineRef engine;
+    LLVMLinkInMCJIT();
+    LLVMBool result = LLVMCreateJITCompilerForModule(&engine, module, 0, &error);
+    if (result)
+    {
+        printf("Failed to initialize: %s\n", error);
+        return;
+    }
+    int (*example)() = (int (*)())LLVMGetPointerToGlobal(engine, fn_llvm);
+    printf("result: %d\n", example());
+  }
+  
+  
 }
 
 int main(int argc, char **argv) {

@@ -4,21 +4,21 @@ passed=0
 failed=0
 
 _test() {
-	# check if custom command is provided
-  if [ -e "$1/cmd" ]; then
+  # check if custom command is provided
+  if [ -x "$1/cmd" ]; then
     "$1/cmd" 2>&1 > "$1/last_output"
   else
     ./cc "$1/input.c" 2>&1 > "$1/last_output"
   fi
   
-  testname="$(basename $1)"
+  testname="${1##*/}"
   if cmp "$1/last_output" "$1/output" >/dev/null; then
     printf "\033[42m PASS \033[0m $testname\n"
-    passed=$((passed+1))
+    : $(( passed = passed + 1 ))
   else
     printf "\033[41m FAIL \033[0m $testname\n"
     status=1
-    failed=$((failed+1))
+    : $(( failed = failed + 1 ))
   fi
 }
 

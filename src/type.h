@@ -19,15 +19,19 @@ enum type_type {
   tt_byte,
   tt_void,
   tt_ptr,
-  tt_array, // @Consider: is an array just something that implements []
-            // operator?
-  tt_struct
+  tt_array,
+  tt_struct,
+  tt_fn
 };
 
+typedef struct function function;
 typedef struct type {
   enum type_type type;
   union {
-    // will be used for storing struct/array/ptr type info
+    struct function* fn;
+    // ptr
+    // struct
+    // array
   };
 } type;
 

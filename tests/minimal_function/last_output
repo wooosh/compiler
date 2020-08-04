@@ -11,3 +11,9 @@ return type: sint
 params:
 body:
 sint
+
+GLOBAL SCOPE:
+const my_fn
+STARTING LLVM CODE GEN:
+Generating my_fn
+result: 42
