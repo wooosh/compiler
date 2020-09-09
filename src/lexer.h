@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 enum token_type {
+  t_operator,
   t_return,
   t_identifier,
   t_literal, // only numbers for now, TODO: split into multiple types
@@ -32,6 +33,7 @@ typedef struct token {
   enum token_type type;
   token_pos pos;
   union {
+    char op; // operator
     vec_char_t str; // identifer, str literal
     int integer;    // num literal
   };

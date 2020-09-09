@@ -3,7 +3,7 @@ obj = $(src:.c=.o)
 llvm_include := $(shell llvm-config --includedir)
 llvm_libs := $(shell llvm-config --libs)
 cc: $(obj)
-	$(CC) -g -I$(llvm_include) -lstdc++ -lm -lpthread -ldl -lz $(llvm_libs)  -o $@ $^ $(LDFLAGS)
+	$(CC) -g -I$(llvm_include)  $(llvm_libs)  -o $@ $^ $(LDFLAGS)
 
 .PHONY: test
 test: cc

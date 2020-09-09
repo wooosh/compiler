@@ -15,6 +15,10 @@ token tb_pop(token_buf *tb) {
   return tb->tokens[tb->idx - 1];
 }
 
+token tb_peek(token_buf *tb) {
+  return tb->tokens[tb->idx];
+}
+
 // @Bug: will make idx negative if used at start of array
 void tb_unpop(token_buf *tb) { tb->idx--; }
 
@@ -68,7 +72,7 @@ int compare_types(token t, enum token_type ts[], char *desc) {
     exit(1);
 #define try_pop_type try_pop_types
 
-expression parse_expression(token_buf *tb, bool statement);
+expression parse_expression(token_buf *tb, bool statement, int rbp);
 
 expression parse_fn_call(token_buf *tb) {
   expression e;
@@ -81,7 +85,7 @@ expression parse_fn_call(token_buf *tb) {
   if (tb_pop(tb).type != t_rparen) {
     tb_unpop(tb);
     do {
-      vec_push(&fnc->params, parse_expression(tb, false));
+      vec_push(&fnc->params, parse_expression(tb, false, 0));
       try_pop_types(tb, t, NULL, t_comma, t_rparen);
     } while (t.type != t_rparen);
     e.fn_call = fnc;
@@ -101,7 +105,23 @@ void statement_mode_error(bool statement, token t, char *found) {
   exit(1);
 }
 
-expression parse_expression(token_buf *tb, bool statement) {
+int get_lbp(token t) {
+  switch(t.op) {
+  case '+': return 10;
+  case '*': return 20;
+  }
+}
+
+token op_to_identifier(token t) {
+  token i;
+  i.type = t_identifier;
+  vec_init(&i.str);
+  vec_push(&i.str, t.op);
+  vec_push(&i.str, '\0');
+  return i;
+}
+
+expression parse_expression(token_buf *tb, bool statement, int rbp) {
   expression e;
   token t = tb_pop(tb);
   switch (t.type) {
@@ -111,30 +131,65 @@ expression parse_expression(token_buf *tb, bool statement) {
       statement_mode_error(statement, t, "return statement");
     e.type = e_return;
     expression *return_value = malloc(sizeof(expression));
-    *return_value = parse_expression(tb, false);
+    *return_value = parse_expression(tb, false, 0);
     e.exp = return_value;
-    return e;
+    break;
   case t_identifier:                            // fn call or var
     if (tb->tokens[tb->idx].type == t_lparen) { // fn call
       tb_unpop(tb);
-      return parse_fn_call(tb);
+      e = parse_fn_call(tb);
     } else { // variable
       if (statement)
         statement_mode_error(statement, t, "variable reference");
       e.type = e_variable;
       e.tok = t;
-      return e;
     }
+    break;
   case t_literal:
     if (statement)
       statement_mode_error(statement, t, "integer literal");
     e.type = e_integer_literal;
     e.tok = t;
-    return e;
+    break;
   default:;
-  }
-  printf("???\n"); // @Todo: proper error messaget
+  printf("??? %s %s\n", token_type_str(t.type), token_str(t)); // @Todo: proper error message
   exit(1);
+  }
+  
+  // don't check for infix operators in a statement
+  if (statement) return e;
+
+  // check for infix operators
+  while (tb_peek(tb).type == t_operator && get_lbp(tb_peek(tb)) > rbp) {
+    token op = tb_pop(tb);
+    switch (op.op) {
+    case '+': {
+      expression add;
+      add.type = e_fn_call;
+      struct fn_call *fnc = malloc(sizeof(struct fn_call));
+      fnc->name = op_to_identifier(op);
+      vec_init(&fnc->params);
+      vec_push(&fnc->params, e);
+      vec_push(&fnc->params, parse_expression(tb, false, 10)); 
+      add.fn_call = fnc;
+      e = add;
+      break;
+    }
+    case '*': {
+      expression add;
+      add.type = e_fn_call;
+      struct fn_call *fnc = malloc(sizeof(struct fn_call));
+      fnc->name = op_to_identifier(op);
+      vec_init(&fnc->params);
+      vec_push(&fnc->params, e);
+      vec_push(&fnc->params, parse_expression(tb, false, 20)); 
+      add.fn_call = fnc;
+      e = add;
+      break;
+    }
+    }
+  }
+  return e; 
 }
 
 // @Cleanup: clean recursive expression printer
@@ -214,7 +269,7 @@ vec_function parse(vec_token tokens) {
     // @Cleanup: maybe restructure into do while?
     vec_init(&fn.body);
     while (tb->tokens[tb->idx].type != t_rbrace) {
-      vec_push(&fn.body, parse_expression(tb, true));
+      vec_push(&fn.body, parse_expression(tb, true, 0));
     }
     tb_pop(tb);
     print_function(fn);

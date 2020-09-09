@@ -8,6 +8,12 @@
 
 char *token_str(token t) {
   switch (t.type) {
+  case t_operator: {
+    char* op = malloc(2);
+    op[0] = t.op;
+    op[1] = '\0';
+    return op;
+  }
   case t_lparen:
     return "(";
   case t_rparen:
@@ -36,6 +42,8 @@ char *token_str(token t) {
 
 char *token_type_str(enum token_type t) {
   switch (t) {
+  case t_operator:
+    return "operator";
   case t_lparen:
     return "'('";
   case t_rparen:
@@ -130,6 +138,11 @@ token read_token(tracked_file *f) {
   }
 
   switch (c) {
+  case '+':
+  case '*':
+    t.type = t_operator;
+    t.op = c;
+    return t; 
   case ',':
     t.type = t_comma;
     return t;
