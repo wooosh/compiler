@@ -106,19 +106,15 @@ void statement_mode_error(bool statement, token t, char *found) {
 }
 
 int get_lbp(token t) {
-  switch(t.op) {
+  switch(t.str.data[0]) {
   case '+': return 10;
   case '*': return 20;
   }
 }
 
-token op_to_identifier(token t) {
-  token i;
-  i.type = t_identifier;
-  vec_init(&i.str);
-  vec_push(&i.str, t.op);
-  vec_push(&i.str, '\0');
-  return i;
+int get_rbp(token t) {
+  // placeholder, eventually we will have different rbp values for some operations
+  return get_lbp(t);
 }
 
 expression parse_expression(token_buf *tb, bool statement, int rbp) {
@@ -162,32 +158,19 @@ expression parse_expression(token_buf *tb, bool statement, int rbp) {
   // check for infix operators
   while (tb_peek(tb).type == t_operator && get_lbp(tb_peek(tb)) > rbp) {
     token op = tb_pop(tb);
-    switch (op.op) {
-    case '+': {
-      expression add;
-      add.type = e_fn_call;
-      struct fn_call *fnc = malloc(sizeof(struct fn_call));
-      fnc->name = op_to_identifier(op);
-      vec_init(&fnc->params);
-      vec_push(&fnc->params, e);
-      vec_push(&fnc->params, parse_expression(tb, false, 10)); 
-      add.fn_call = fnc;
-      e = add;
-      break;
-    }
-    case '*': {
-      expression add;
-      add.type = e_fn_call;
-      struct fn_call *fnc = malloc(sizeof(struct fn_call));
-      fnc->name = op_to_identifier(op);
-      vec_init(&fnc->params);
-      vec_push(&fnc->params, e);
-      vec_push(&fnc->params, parse_expression(tb, false, 20)); 
-      add.fn_call = fnc;
-      e = add;
-      break;
-    }
-    }
+    
+    expression op_expr;
+    op_expr.type = e_fn_call;
+    
+    struct fn_call *fnc = malloc(sizeof(struct fn_call));
+    fnc->name = op;
+    
+    vec_init(&fnc->params);
+    vec_push(&fnc->params, e);
+    vec_push(&fnc->params, parse_expression(tb, false, get_rbp(op))); 
+    
+    op_expr.fn_call = fnc;
+    e = op_expr;
   }
   return e; 
 }

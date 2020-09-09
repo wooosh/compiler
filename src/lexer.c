@@ -8,12 +8,6 @@
 
 char *token_str(token t) {
   switch (t.type) {
-  case t_operator: {
-    char* op = malloc(2);
-    op[0] = t.op;
-    op[1] = '\0';
-    return op;
-  }
   case t_lparen:
     return "(";
   case t_rparen:
@@ -29,6 +23,7 @@ char *token_str(token t) {
     char *num = malloc(len);
     snprintf(num, len, "%d", t.integer);
     return num;
+  case t_operator:
   case t_identifier:
     return t.str.data;
   case t_return:
@@ -141,7 +136,9 @@ token read_token(tracked_file *f) {
   case '+':
   case '*':
     t.type = t_operator;
-    t.op = c;
+    vec_init(&t.str);
+    vec_push(&t.str, c);
+    vec_push(&t.str, 0);
     return t; 
   case ',':
     t.type = t_comma;
