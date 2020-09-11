@@ -28,7 +28,7 @@ typedef struct function function;
 typedef struct type {
   enum type_type type;
   union {
-    struct function* fn;
+    struct function *fn;
     // ptr
     // struct
     // array

@@ -15,9 +15,7 @@ token tb_pop(token_buf *tb) {
   return tb->tokens[tb->idx - 1];
 }
 
-token tb_peek(token_buf *tb) {
-  return tb->tokens[tb->idx];
-}
+token tb_peek(token_buf *tb) { return tb->tokens[tb->idx]; }
 
 // @Bug: will make idx negative if used at start of array
 void tb_unpop(token_buf *tb) { tb->idx--; }
@@ -106,14 +104,17 @@ void statement_mode_error(bool statement, token t, char *found) {
 }
 
 int get_lbp(token t) {
-  switch(t.str.data[0]) {
-  case '+': return 10;
-  case '*': return 20;
+  switch (t.str.data[0]) {
+  case '+':
+    return 10;
+  case '*':
+    return 20;
   }
 }
 
 int get_rbp(token t) {
-  // placeholder, eventually we will have different rbp values for some operations
+  // placeholder, eventually we will have different rbp values for some
+  // operations
   return get_lbp(t);
 }
 
@@ -148,31 +149,33 @@ expression parse_expression(token_buf *tb, bool statement, int rbp) {
     e.tok = t;
     break;
   default:;
-  printf("??? %s %s\n", token_type_str(t.type), token_str(t)); // @Todo: proper error message
-  exit(1);
+    printf("??? %s %s\n", token_type_str(t.type),
+           token_str(t)); // @Todo: proper error message
+    exit(1);
   }
-  
+
   // don't check for infix operators in a statement
-  if (statement) return e;
+  if (statement)
+    return e;
 
   // check for infix operators
   while (tb_peek(tb).type == t_operator && get_lbp(tb_peek(tb)) > rbp) {
     token op = tb_pop(tb);
-    
+
     expression op_expr;
     op_expr.type = e_fn_call;
-    
+
     struct fn_call *fnc = malloc(sizeof(struct fn_call));
     fnc->name = op;
-    
+
     vec_init(&fnc->params);
     vec_push(&fnc->params, e);
-    vec_push(&fnc->params, parse_expression(tb, false, get_rbp(op))); 
-    
+    vec_push(&fnc->params, parse_expression(tb, false, get_rbp(op)));
+
     op_expr.fn_call = fnc;
     e = op_expr;
   }
-  return e; 
+  return e;
 }
 
 // @Cleanup: clean recursive expression printer

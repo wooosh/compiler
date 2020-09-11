@@ -1,3 +1,6 @@
+#include <gc.h>
+#define malloc GC_MALLOC
+#define realloc GC_REALLOC
 /**
  * Copyright (c) 2014 rxi
  *

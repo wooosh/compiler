@@ -2,7 +2,9 @@
 #define PARSER_H
 
 #include "lexer.h"
-#include "type.h"  
+#include "stdbool.h"
+#include "type.h"
+
 enum expression_type {
   // statements
   e_fn_call,
@@ -50,6 +52,8 @@ typedef struct function {
 
   vec_param_pair params;
   vec_expression body;
+
+  bool builtin;
 } function;
 
 typedef vec_t(function) vec_function;

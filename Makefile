@@ -2,8 +2,9 @@ src = $(wildcard src/*.c)
 obj = $(src:.c=.o)
 llvm_include := $(shell llvm-config --includedir)
 llvm_libs := $(shell llvm-config --libs)
+
 cc: $(obj)
-	$(CC) -g -I$(llvm_include)  $(llvm_libs)  -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -g -I$(llvm_include)  $(llvm_libs) -lgc  -o $@ $^ $(LDFLAGS)
 
 .PHONY: test
 test: cc

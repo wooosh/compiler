@@ -1,3 +1,7 @@
+#include <gc.h>
+#define malloc GC_MALLOC
+#define realloc GC_REALLOC
+
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -139,7 +143,7 @@ token read_token(tracked_file *f) {
     vec_init(&t.str);
     vec_push(&t.str, c);
     vec_push(&t.str, 0);
-    return t; 
+    return t;
   case ',':
     t.type = t_comma;
     return t;
