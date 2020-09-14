@@ -2,6 +2,7 @@
 #include "lexer.h"
 #include "misc.h"
 
+#include <gc.h>
 #include <stdbool.h>
 
 typedef struct token_buf {
