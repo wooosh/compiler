@@ -123,6 +123,15 @@ expression parse_expression(token_buf *tb, bool statement, int rbp) {
   token t = tb_pop(tb);
   switch (t.type) {
   // @Cleanup
+  case t_let:
+    if (!statement)
+      statement_mode_error(statement, t, "declaration");
+    e.type = e_declaration;
+    e.decl = malloc(sizeof(struct declaration));
+    e.decl->is_const = false;
+    try_pop_type(tb, e.decl->name, "variable name", t_identifier);
+    try_pop_type(tb, e.decl->type_tok, "type", t_identifier);
+    return e;
   case t_return:
     if (!statement)
       statement_mode_error(statement, t, "return statement");
@@ -136,10 +145,22 @@ expression parse_expression(token_buf *tb, bool statement, int rbp) {
       tb_unpop(tb);
       e = parse_fn_call(tb);
     } else { // variable
-      if (statement)
-        statement_mode_error(statement, t, "variable reference");
-      e.type = e_variable;
-      e.tok = t;
+      if (tb_peek(tb).type == t_equals) {
+        if (!statement)
+          statement_mode_error(statement, t, "variable assignment");
+        tb_pop(tb);
+        struct assignment *a = malloc(sizeof(struct assignment));
+        a->name = t;
+        a->value = parse_expression(tb, false, 0);
+
+        e.type = e_assign;
+        e.assign = a;
+      } else {
+        if (statement)
+          statement_mode_error(statement, t, "variable reference");
+        e.type = e_reference;
+        e.tok = t;
+      }
     }
     break;
   case t_literal:
@@ -197,7 +218,7 @@ void print_expression(expression e) {
     }
     printf(")");
     break;
-  case e_variable:
+  case e_reference:
     printf(e.tok.str.data);
     break;
   default:

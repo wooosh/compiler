@@ -12,6 +12,8 @@
 
 char *token_str(token t) {
   switch (t.type) {
+  case t_let:
+    return "let";
   case t_lparen:
     return "(";
   case t_rparen:
@@ -41,6 +43,8 @@ char *token_str(token t) {
 
 char *token_type_str(enum token_type t) {
   switch (t) {
+  case t_let:
+    return "let";
   case t_operator:
     return "operator";
   case t_lparen:
@@ -144,6 +148,9 @@ token read_token(tracked_file *f) {
     vec_push(&t.str, c);
     vec_push(&t.str, 0);
     return t;
+  case '=':
+    t.type = t_equals;
+    return t;
   case ',':
     t.type = t_comma;
     return t;
@@ -189,6 +196,9 @@ token read_token(tracked_file *f) {
       // Check if keyword
       if (strcmp("return", str.data) == 0) {
         t.type = t_return;
+        return t;
+      } else if (strcmp("let", str.data) == 0) {
+        t.type = t_let;
         return t;
       }
 

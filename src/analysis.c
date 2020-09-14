@@ -76,6 +76,13 @@ bool coerces(expression e, type t) {
 
 void read_expression(parser_state *p, expression *e) {
   switch (e->type) {
+  case e_declaration: {
+    // @Todo: parse type
+    struct declaration *decl = e->decl;
+    symbol s = {decl->is_const, decl->name.str.data, parse_type(decl->type_tok)};
+    vec_push(&p->symbol_stack, s);
+    break; 
+  }
   case e_fn_call: {
     // check if function exists
     struct fn_call *fnc = e->fn_call;
@@ -153,26 +160,27 @@ parser_state analyse(vec_function fv) {
   // @Todo: move to builtins.h
   // add builtins to symbol table
   // @Todo: add type annotations
-  function add;
-  add.builtin = true;
-  add.return_type_tok = builtin_token("sint");
-  add.return_type = (type){tt_sint};
-  add.name = builtin_token("+");
-  add.params = builtin_params(
+  function *add = malloc(sizeof(function));
+  add->builtin = true;
+  add->return_type_tok = builtin_token("sint");
+  add->return_type = (type){tt_sint};
+  add->name = builtin_token("+");
+  add->params = builtin_params(
       (struct param_pair[]){
           {builtin_token("a"), builtin_token("sint"), (type){tt_sint}},
           {builtin_token("b"), builtin_token("sint"), (type){tt_sint}},
       },
       2);
-  symbol add_s = (symbol){true, "+", (type){tt_fn, &add}};
+  symbol add_s = (symbol){true, "+", (type){tt_fn, add}};
   vec_push(&p.symbol_stack, add_s);
 
-  function mult;
-  mult.builtin = true;
-  mult.return_type_tok = builtin_token("sint");
-  mult.return_type = (type){tt_sint};
-  mult.name = builtin_token("*");
-  mult.params = builtin_params(
+
+  function *mult = malloc(sizeof(function));
+  mult->builtin = true;
+  mult->return_type_tok = builtin_token("sint");
+  mult->return_type = (type){tt_sint};
+  mult->name = builtin_token("*");
+  mult->params = builtin_params(
       (struct param_pair[]){
           {builtin_token("a"), builtin_token("sint"), (type){tt_sint}},
           {builtin_token("b"), builtin_token("sint"), (type){tt_sint}},
@@ -180,7 +188,7 @@ parser_state analyse(vec_function fv) {
       2);
 
   // needs to be a seperate line because vec_push is a macro
-  symbol mult_s = (symbol){true, "*", (type){tt_fn, &mult}};
+  symbol mult_s = (symbol){true, "*", (type){tt_fn, mult}};
   vec_push(&p.symbol_stack, mult_s);
 
   // build function table

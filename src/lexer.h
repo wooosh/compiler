@@ -10,6 +10,9 @@ enum token_type {
   t_operator,
   t_return,
   t_identifier,
+  t_let,
+  t_const,
+  t_equals,
   t_literal, // only numbers for now, TODO: split into multiple types
   t_lparen,
   t_rparen,

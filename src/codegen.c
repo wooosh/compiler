@@ -23,29 +23,56 @@
 #include "llvm-c/Types.h"
 #include <llvm-c/Analysis.h>
 
-LLVMValueRef exp_to_val(LLVMBuilderRef builder, expression e) {
+// @Todo: rename all structs so naming conflicts don't happen
+// codegen symbol
+typedef struct c_symbol {
+  // alloc'd location
+  LLVMValueRef v;
+  char* name;
+} c_symbol;
+
+typedef vec_t(c_symbol) vec_c_symbol;
+// used to store codegen internal state
+struct state {
+  LLVMBuilderRef b;
+  
+  //vec_int_t scope_indexes;
+  vec_c_symbol symbol_stack;
+};
+
+LLVMValueRef get_symbol(struct state *state, char* name) {
+  for (int i=state->symbol_stack.length-1; i>=0; i--) {
+    if (strcmp(name, state->symbol_stack.data[i].name) == 0) {
+      return state->symbol_stack.data[i].v;
+    }
+  }
+}
+
+LLVMValueRef exp_to_val(struct state *state, expression e) {
   switch (e.type) {
   case e_integer_literal:
     // @Todo: coerce to proper type
     // @Todo: tag integer literals with their determined type during analysis
     return LLVMConstInt(LLVMInt32Type(), e.tok.integer, true);
+  case e_reference:
+    return LLVMBuildLoad(state->b, get_symbol(state, e.tok.str.data), "reference"); 
   case e_fn_call: {
     struct fn_call fnc = *e.fn_call;
     if (fnc.fn->builtin) {
       switch (fnc.name.str.data[0]) {
       case '+':
-        return LLVMBuildAdd(builder, exp_to_val(builder, fnc.params.data[0]),
-                            exp_to_val(builder, fnc.params.data[1]), "addtmp");
+        return LLVMBuildAdd(state->b, exp_to_val(state, fnc.params.data[0]),
+                            exp_to_val(state, fnc.params.data[1]), "addtmp");
       case '*':
-        return LLVMBuildMul(builder, exp_to_val(builder, fnc.params.data[0]),
-                            exp_to_val(builder, fnc.params.data[1]), "multtmp");
+        return LLVMBuildMul(state->b, exp_to_val(state, fnc.params.data[0]),
+                            exp_to_val(state, fnc.params.data[1]), "multtmp");
       }
       // Intentional fall through
     }
     // Intentional fall through
   }
   default:
-    printf("???\n");
+    printf("??? exp_to_val %d\n", e.type);
     exit(1);
   }
 }
@@ -59,6 +86,10 @@ void codegen(parser_state p) {
 
   LLVMModuleRef module = LLVMModuleCreateWithName("main");
   LLVMSetTarget(module, LLVMGetDefaultTargetTriple());
+
+  struct state state;
+  //vec_init(&state.vec_int_t);
+  vec_init(&state.symbol_stack);
 
   // generate code for functions
   for (int i = 0; i < p.fv.length; i++) {
@@ -75,12 +106,22 @@ void codegen(parser_state p) {
     LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(fn_llvm, "entry");
     LLVMPositionBuilderAtEnd(builder, entryBlock);
 
+    state.b = builder;
     // generate function body
     for (int j = 0; j < fn_data.body.length; j++) {
-      expression e = fn_data.body.data[i];
+      expression e = fn_data.body.data[j];
       switch (e.type) {
+      case e_declaration: {
+        c_symbol s = {LLVMBuildAlloca(builder, LLVMInt32Type(), "variable"), e.decl->name.str.data};
+        vec_push(&state.symbol_stack, s);
+        break;
+      }
+      case e_assign: {
+        LLVMBuildStore(state.b, exp_to_val(&state, e.assign->value), get_symbol(&state, e.assign->name.str.data));
+        break;
+      }
       case e_return:
-        LLVMBuildRet(builder, exp_to_val(builder, *e.exp));
+        LLVMBuildRet(builder, exp_to_val(&state, *e.exp));
         break;
       default:
         printf("??? unknown statement\n");

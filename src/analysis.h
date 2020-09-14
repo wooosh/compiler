@@ -2,8 +2,6 @@
 #define ANALYSIS_H
 #include "parser.h"
 
-enum symbol_type { st_variable, st_function };
-
 typedef struct symbol {
   // @Todo: add definition location
   bool is_const;
