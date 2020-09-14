@@ -5,6 +5,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "analysis.h"
+#include "codegen.h"
 
 int main(int argc, char **argv) {
   if (argc != 2) {
@@ -12,7 +13,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   GC_INIT();
-  analyse(parse(lex(argv[1])));
+  codegen(analyse(parse(lex(argv[1]))));
 
   return 0;
 }

@@ -2,6 +2,7 @@
 #define malloc GC_MALLOC
 #define realloc GC_REALLOC
 
+#include "analysis.h"
 #include "lexer.h"
 #include "parser.h"
 
@@ -23,20 +24,6 @@
 #include <llvm-c/Analysis.h>
 
 // @Todo: make lexical analysis output multiple errors
-enum symbol_type { st_variable, st_function };
-
-typedef struct symbol {
-  // @Todo: add definition location
-  bool is_const;
-  char *name;
-  type type;
-} symbol;
-
-typedef vec_t(struct symbol) vec_symbol;
-typedef struct parser_state {
-  vec_int_t scope_indexes;
-  vec_symbol symbol_stack;
-} parser_state;
 
 void enter_scope(parser_state *p) {
   vec_push(&p->scope_indexes, p->symbol_stack.length);
@@ -155,34 +142,7 @@ token builtin_token(char *str) {
   return (token){t_identifier, {NULL, 0, 0, 0, 0}, vstr};
 }
 
-LLVMValueRef exp_to_val(LLVMBuilderRef builder, expression e) {
-  switch (e.type) {
-  case e_integer_literal:
-    // @Todo: coerce to proper type
-    // @Todo: tag integer literals with their determined type during analysis
-    return LLVMConstInt(LLVMInt32Type(), e.tok.integer, true);
-  case e_fn_call: {
-    struct fn_call fnc = *e.fn_call;
-    if (fnc.fn->builtin) {
-      switch (fnc.name.str.data[0]) {
-      case '+':
-        return LLVMBuildAdd(builder, exp_to_val(builder, fnc.params.data[0]),
-                            exp_to_val(builder, fnc.params.data[1]), "addtmp");
-      case '*':
-        return LLVMBuildMul(builder, exp_to_val(builder, fnc.params.data[0]),
-                            exp_to_val(builder, fnc.params.data[1]), "multtmp");
-      }
-      // Intentional fall through
-    }
-    // Intentional fall through
-  }
-  default:
-    printf("???\n");
-    exit(1);
-  }
-}
-
-void analyse(vec_function fv) {
+parser_state analyse(vec_function fv) {
   // @Todo: create type tables
   // @Todo: create canonical symbol names for generics and multiple dispatch,
   // which function calls structs will contain a pointer to
@@ -245,57 +205,6 @@ void analyse(vec_function fv) {
     }
   }
 
-  printf("STARTING LLVM CODE GEN:\n");
-  // codegen
-  LLVMInitializeNativeAsmPrinter();
-  LLVMInitializeNativeTarget();
-  LLVMLoadLibraryPermanently("c");
-
-  LLVMModuleRef module = LLVMModuleCreateWithName("main");
-  LLVMSetTarget(module, LLVMGetDefaultTargetTriple());
-
-  // generate code for functions
-  for (int i = 0; i < fv.length; i++) {
-    function fn_data = fv.data[i];
-    printf("Generating %s\n", fn_data.name.str.data);
-    // @Todo: parameters
-    LLVMTypeRef params[0] = {};
-    LLVMTypeRef functionType = LLVMFunctionType(LLVMInt32Type(), params, 0, 0);
-
-    // set up function
-    LLVMValueRef fn_llvm =
-        LLVMAddFunction(module, fn_data.name.str.data, functionType);
-    LLVMBuilderRef builder = LLVMCreateBuilder();
-    LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(fn_llvm, "entry");
-    LLVMPositionBuilderAtEnd(builder, entryBlock);
-
-    // generate function body
-    for (int j = 0; j < fn_data.body.length; j++) {
-      expression e = fn_data.body.data[i];
-      switch (e.type) {
-      case e_return:
-        LLVMBuildRet(builder, exp_to_val(builder, *e.exp));
-        break;
-      default:
-        printf("??? unknown statement\n");
-        exit(1);
-      }
-    }
-
-    char *error = NULL;
-    LLVMVerifyModule(module, LLVMAbortProcessAction, &error);
-    LLVMDisposeMessage(error);
-    LLVMDumpModule(module);
-
-    LLVMExecutionEngineRef engine;
-    LLVMLinkInMCJIT();
-    LLVMBool result =
-        LLVMCreateJITCompilerForModule(&engine, module, 0, &error);
-    if (result) {
-      printf("Failed to initialize: %s\n", error);
-      return;
-    }
-    int (*example)() = (int (*)())LLVMGetPointerToGlobal(engine, fn_llvm);
-    printf("result: %d\n", example());
-  }
+  p.fv = fv;
+  return p;
 }
