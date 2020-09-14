@@ -13,14 +13,14 @@
 #include "vec.h"
 #include <stdbool.h>
 
-#include "llvm-c/Core.h"
-#include "llvm-c/ExecutionEngine.h"
-#include "llvm-c/Initialization.h"
-#include "llvm-c/Object.h"
-#include "llvm-c/Support.h"
-#include "llvm-c/Target.h"
-#include "llvm-c/TargetMachine.h"
-#include "llvm-c/Types.h"
+#include <llvm-c/Core.h>
+#include <llvm-c/ExecutionEngine.h>
+#include <llvm-c/Initialization.h>
+#include <llvm-c/Object.h>
+#include <llvm-c/Support.h>
+#include <llvm-c/Target.h>
+#include <llvm-c/TargetMachine.h>
+#include <llvm-c/Types.h>
 #include <llvm-c/Analysis.h>
 
 // @Todo: rename all structs so naming conflicts don't happen
