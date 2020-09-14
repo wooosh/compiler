@@ -13,16 +13,6 @@
 #include "vec.h"
 #include <stdbool.h>
 
-#include "llvm-c/Core.h"
-#include "llvm-c/ExecutionEngine.h"
-#include "llvm-c/Initialization.h"
-#include "llvm-c/Object.h"
-#include "llvm-c/Support.h"
-#include "llvm-c/Target.h"
-#include "llvm-c/TargetMachine.h"
-#include "llvm-c/Types.h"
-#include <llvm-c/Analysis.h>
-
 // @Todo: make lexical analysis output multiple errors
 
 void enter_scope(parser_state *p) {
@@ -34,8 +24,17 @@ void exit_scope(parser_state *p) {
   vec_pop(&p->scope_indexes);
 }
 
-// @Todo: delete
-symbol *get_symbol(parser_state *p, char *name);
+// max_scope is the highest scope level to search, used for checking
+// if a symbol already exists in the local scope. 0 means search all scopes
+symbol get_symbol(parser_state *p, char *name, int max_scope) {
+  for (int i = p->symbol_stack.length - 1;
+       i >= 0 && i >= p->scope_indexes.data[max_scope]; i--) {
+    if (strcmp(name, p->symbol_stack.data[i].name) == 0) {
+      return p->symbol_stack.data[i];
+    }
+  }
+  return (symbol){false, NULL};
+}
 
 type parse_type(token tok) {
   type t;
@@ -61,8 +60,10 @@ void read_function_signature(function *f) {
   }
 }
 
-bool coerces(expression e, type t) {
+bool coerces(parser_state* p, expression e, type t) {
   switch (e.type) {
+  case e_reference:
+    return type_equal(get_symbol(p, e.tok.str.data, 0).type, t);
   case e_fn_call:
     return type_equal(e.fn_call->fn->return_type, t);
   // @Todo: add casts to for non-sint's
@@ -76,13 +77,58 @@ bool coerces(expression e, type t) {
 
 void read_expression(parser_state *p, expression *e) {
   switch (e->type) {
-  case e_declaration: {
-    // @Todo: parse type
-    struct declaration *decl = e->decl;
-    symbol s = {decl->is_const, decl->name.str.data, parse_type(decl->type_tok)};
-    vec_push(&p->symbol_stack, s);
-    break; 
+  case e_reference: {
+    if (get_symbol(p, e->tok.str.data, 0).name == NULL) {
+      printf("%s: Cannot reference '%s' before it is declared\n", token_location(e->tok), e->tok.str.data);
+      print_token_loc(e->tok);
+      exit(1);
+    }
+    
+    break;
   }
+
+  case e_declaration: {
+    struct declaration *decl = e->decl;
+    if (get_symbol(p, decl->name.str.data, p->scope_indexes.length).name !=
+        NULL) {
+      // @Todo: show other definition
+      printf("%s: Symbol '%s' already declared\n", token_location(decl->name),
+             decl->name.str.data);
+      print_token_loc(decl->name);
+      exit(1);
+    }
+    decl->type = parse_type(decl->type_tok);
+    symbol s = {decl->is_const, decl->name.str.data, decl->type};
+    vec_push(&p->symbol_stack, s);
+    break;
+  }
+  
+  case e_assign: {
+    read_expression(p, &e->assign->value);
+    symbol s = get_symbol(p, e->assign->name.str.data, 0);
+    if (s.name == NULL) {
+      printf("%s: Cannot assign to '%s' before it is declared\n", token_location(e->assign->name), e->assign->name.str.data);
+      print_token_loc(e->assign->name);
+      exit(1);
+    }
+    
+    if (s.is_const) {
+      // @Todo: add location of definition
+      printf("%s: Cannot assign to '%s' because it is defined as const\n", token_location(e->assign->name), e->assign->name.str.data);
+      print_token_loc(e->assign->name);
+      exit(1);
+    }
+      
+    if (!coerces(p, e->assign->value, s.type)) {
+      // @Todo: add location of definition
+      // @Todo: print mismatched types
+      printf("%s: Mismatched types\n", token_location(e->assign->name));
+      print_token_loc(e->assign->name);
+      exit(1);
+    };
+    break;
+  }
+
   case e_fn_call: {
     // check if function exists
     struct fn_call *fnc = e->fn_call;
@@ -104,7 +150,7 @@ void read_expression(parser_state *p, expression *e) {
           continue;
 
         for (int i = 0; i < fn->params.length; i++) {
-          if (!coerces(fnc->params.data[i], fn->params.data[i].type)) {
+          if (!coerces(p, fnc->params.data[i], fn->params.data[i].type)) {
             goto next;
           }
         }
@@ -115,20 +161,24 @@ void read_expression(parser_state *p, expression *e) {
     next:;
     }
     // @Todo: print "unknown function" if no function with matching name
+    // @Todo: print type signatures
     // and "no function with matching signature" otherwise
-    printf("%s: Unknown function named '%s'\n", token_location(name),
+    printf("%s: Unknown function named '%s' with type signature given\n", token_location(name),
            name.str.data);
     print_token_loc(name);
     exit(1);
   }
+
   case e_return:
     // @Todo: read_expression of return value
     read_expression(p, e->exp);
     return;
+
   case e_integer_literal: {
     // No type checking needed
     return;
   }
+
   default:
     printf("unhandled type when reading expression\n");
     // exit(1);
@@ -174,7 +224,6 @@ parser_state analyse(vec_function fv) {
   symbol add_s = (symbol){true, "+", (type){tt_fn, add}};
   vec_push(&p.symbol_stack, add_s);
 
-
   function *mult = malloc(sizeof(function));
   mult->builtin = true;
   mult->return_type_tok = builtin_token("sint");
@@ -208,9 +257,11 @@ parser_state analyse(vec_function fv) {
 
   // validate functions & body
   for (int i = 0; i < fv.length; i++) {
+    enter_scope(&p);
     for (int j = 0; j < fv.data[i].body.length; j++) {
       read_expression(&p, &fv.data[i].body.data[j]);
     }
+    exit_scope(&p);
   }
 
   p.fv = fv;

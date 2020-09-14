@@ -2,10 +2,10 @@
 #define malloc GC_MALLOC
 #define realloc GC_REALLOC
 
-#include "lexer.h"
-#include "parser.h"
 #include "analysis.h"
 #include "codegen.h"
+#include "lexer.h"
+#include "parser.h"
 
 int main(int argc, char **argv) {
   if (argc != 2) {

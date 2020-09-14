@@ -184,8 +184,8 @@ token read_token(tracked_file *f) {
       is_num = false;
     vec_push(&str, c);
   }
-  str.data[str.length] = '\0';
   if (str.length > 0) {
+    str.data[str.length] = '\0';
     wungetc(c, f);
     if (is_num) {
       // @Todo: read into unsigned variable, and negate if first char is '-'

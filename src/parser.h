@@ -32,8 +32,8 @@ typedef struct expression {
   enum expression_type type;
   // @Todo: work position in?
   union {
-    struct expression *exp; // return value
-    token tok; // variable reference
+    struct expression *exp;  // return value
+    token tok;               // variable reference
     struct fn_call *fn_call; // @Todo: figure out why this is a pointer
     struct declaration *decl;
     struct assignment *assign;

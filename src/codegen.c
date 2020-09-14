@@ -2,9 +2,9 @@
 #define malloc GC_MALLOC
 #define realloc GC_REALLOC
 
+#include "analysis.h"
 #include "lexer.h"
 #include "parser.h"
-#include "analysis.h"
 
 // @Todo: make return check that the return value is on the same row
 
@@ -28,20 +28,20 @@
 typedef struct c_symbol {
   // alloc'd location
   LLVMValueRef v;
-  char* name;
+  char *name;
 } c_symbol;
 
 typedef vec_t(c_symbol) vec_c_symbol;
 // used to store codegen internal state
 struct state {
   LLVMBuilderRef b;
-  
-  //vec_int_t scope_indexes;
+
+  // vec_int_t scope_indexes;
   vec_c_symbol symbol_stack;
 };
 
-LLVMValueRef get_symbol(struct state *state, char* name) {
-  for (int i=state->symbol_stack.length-1; i>=0; i--) {
+LLVMValueRef get_c_symbol(struct state *state, char *name) {
+  for (int i = state->symbol_stack.length - 1; i >= 0; i--) {
     if (strcmp(name, state->symbol_stack.data[i].name) == 0) {
       return state->symbol_stack.data[i].v;
     }
@@ -55,7 +55,8 @@ LLVMValueRef exp_to_val(struct state *state, expression e) {
     // @Todo: tag integer literals with their determined type during analysis
     return LLVMConstInt(LLVMInt32Type(), e.tok.integer, true);
   case e_reference:
-    return LLVMBuildLoad(state->b, get_symbol(state, e.tok.str.data), "reference"); 
+    return LLVMBuildLoad(state->b, get_c_symbol(state, e.tok.str.data),
+                         "reference");
   case e_fn_call: {
     struct fn_call fnc = *e.fn_call;
     if (fnc.fn->builtin) {
@@ -88,7 +89,7 @@ void codegen(parser_state p) {
   LLVMSetTarget(module, LLVMGetDefaultTargetTriple());
 
   struct state state;
-  //vec_init(&state.vec_int_t);
+  // vec_init(&state.vec_int_t);
   vec_init(&state.symbol_stack);
 
   // generate code for functions
@@ -112,12 +113,14 @@ void codegen(parser_state p) {
       expression e = fn_data.body.data[j];
       switch (e.type) {
       case e_declaration: {
-        c_symbol s = {LLVMBuildAlloca(builder, LLVMInt32Type(), "variable"), e.decl->name.str.data};
+        c_symbol s = {LLVMBuildAlloca(builder, LLVMInt32Type(), "variable"),
+                      e.decl->name.str.data};
         vec_push(&state.symbol_stack, s);
         break;
       }
       case e_assign: {
-        LLVMBuildStore(state.b, exp_to_val(&state, e.assign->value), get_symbol(&state, e.assign->name.str.data));
+        LLVMBuildStore(state.b, exp_to_val(&state, e.assign->value),
+                       get_c_symbol(&state, e.assign->name.str.data));
         break;
       }
       case e_return:
@@ -137,7 +140,7 @@ void codegen(parser_state p) {
     LLVMExecutionEngineRef engine;
     LLVMLinkInMCJIT();
     LLVMBool result =
-        LLVMCreateJITCompilerForModule(&engine, module, 0, &error);
+        LLVMCreateJITCompilerForModule(&engine, module, 3, &error);
     if (result) {
       printf("Failed to initialize: %s\n", error);
       return;
@@ -145,5 +148,4 @@ void codegen(parser_state p) {
     int (*example)() = (int (*)())LLVMGetPointerToGlobal(engine, fn_llvm);
     printf("result: %d\n", example());
   }
-  
 }
