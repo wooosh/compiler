@@ -40,7 +40,6 @@ type parse_type(token tok) {
   type t;
   for (int i = 0; i < NUM_BUILTIN_TYPES; i++) {
     if (strcmp(tok.str.data, builtin_types[i]) == 0) {
-      printf("%s\n", builtin_types[i]);
       t.type = i;
       return t;
     }
@@ -180,7 +179,7 @@ void read_expression(parser_state *p, expression *e) {
   }
 
   default:
-    printf("unhandled type when reading expression\n");
+    printf("unhandled type when reading expression %d\n", e->type);
     // exit(1);
   }
 }
@@ -248,12 +247,13 @@ parser_state analyse(vec_function fv) {
     vec_push(&p.symbol_stack, s);
   }
 
+  /*
   // display global scope
   printf("\nGLOBAL SCOPE:\n");
   for (int i = 0; i < p.symbol_stack.length; i++) {
     symbol s = p.symbol_stack.data[i];
     printf("%s %s\n", s.is_const ? "const" : "", s.name);
-  }
+  }*/
 
   // validate functions & body
   for (int i = 0; i < fv.length; i++) {

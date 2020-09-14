@@ -1,0 +1,3 @@
+tests/assign_before_declare/input.c:2:4: Cannot assign to 'x' before it is declared
+   |  x = 20
+   |  [31m^[0m

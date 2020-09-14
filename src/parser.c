@@ -86,9 +86,9 @@ expression parse_fn_call(token_buf *tb) {
       vec_push(&fnc->params, parse_expression(tb, false, 0));
       try_pop_types(tb, t, NULL, t_comma, t_rparen);
     } while (t.type != t_rparen);
-    e.fn_call = fnc;
-    return e;
   }
+  e.fn_call = fnc;
+  return e;
 }
 
 void statement_mode_error(bool statement, token t, char *found) {
@@ -279,7 +279,7 @@ vec_function parse(vec_token tokens) {
       vec_push(&fn.body, parse_expression(tb, true, 0));
     }
     tb_pop(tb);
-    print_function(fn);
+    // print_function(fn);
     vec_push(&fl, fn);
   }
   return fl;

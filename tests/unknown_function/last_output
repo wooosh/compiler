@@ -1,0 +1,3 @@
+tests/unknown_function/input.c:2:11: Unknown function named 'unknown_function' with type signature given
+   |  return unknown_function()
+   |         [31m^^^^^^^^^^^^^^^^[0m

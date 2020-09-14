@@ -1,4 +1,5 @@
 cc
+tests/*/output
 *.swp
 .core
 *.o

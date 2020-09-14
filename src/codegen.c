@@ -79,7 +79,6 @@ LLVMValueRef exp_to_val(struct state *state, expression e) {
 }
 
 void codegen(parser_state p) {
-  printf("STARTING LLVM CODE GEN:\n");
   // codegen
   LLVMInitializeNativeAsmPrinter();
   LLVMInitializeNativeTarget();

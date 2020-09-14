@@ -1,0 +1,3 @@
+tests/referenced_before_declare/input.c:2:11: Cannot reference 'x' before it is declared
+   |  return x
+   |         [31m^[0m

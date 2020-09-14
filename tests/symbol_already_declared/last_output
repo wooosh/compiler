@@ -1,0 +1,3 @@
+tests/symbol_already_declared/input.c:3:8: Symbol 'x' already declared
+   |  let x s64
+   |      [31m^[0m

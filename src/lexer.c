@@ -228,11 +228,12 @@ vec_token lex(char *filename) {
     vec_push(&tokens, t);
   } while (t.type != t_EOF);
 
+  /*
   for (int i = 0; i < tokens.length; i++) {
     t = tokens.data[i];
     printf("%s:%zu:%zu: %s\n", t.pos.filename, t.pos.row, t.pos.col,
            token_str(t));
-  }
+  }*/
 
   fclose(f.f);
   return tokens;
