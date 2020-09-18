@@ -88,6 +88,7 @@ void read_expression(parser_state *p, expression *e) {
 
   case e_declaration: {
     struct declaration *decl = e->decl;
+    // Make sure the symbol is not already declared in the current scope
     if (get_symbol(p, decl->name.str.data, p->scope_indexes.length).name !=
         NULL) {
       // @Todo: show other definition
@@ -105,12 +106,15 @@ void read_expression(parser_state *p, expression *e) {
   case e_assign: {
     read_expression(p, &e->assign->value);
     symbol s = get_symbol(p, e->assign->name.str.data, 0);
+
+    // Make sure variable has been declared
     if (s.name == NULL) {
       printf("%s: Cannot assign to '%s' before it is declared\n", token_location(e->assign->name), e->assign->name.str.data);
       print_token_loc(e->assign->name);
       exit(1);
     }
     
+    // Make sure variable is not const
     if (s.is_const) {
       // @Todo: add location of definition
       printf("%s: Cannot assign to '%s' because it is defined as const\n", token_location(e->assign->name), e->assign->name.str.data);
@@ -118,6 +122,7 @@ void read_expression(parser_state *p, expression *e) {
       exit(1);
     }
       
+    // Make sure the types match
     if (!coerces(p, e->assign->value, s.type)) {
       // @Todo: add location of definition
       // @Todo: print mismatched types

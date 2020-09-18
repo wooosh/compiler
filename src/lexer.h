@@ -10,6 +10,7 @@ enum token_type {
   t_operator,
   t_return,
   t_identifier,
+  t_if,
   t_let,
   t_const,
   t_equals,

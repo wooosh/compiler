@@ -5,7 +5,7 @@
 #include "analysis.h"
 #include "lexer.h"
 #include "parser.h"
-
+#include "options.h"
 // @Todo: make return check that the return value is on the same row
 
 #include "misc.h"
@@ -94,7 +94,6 @@ void codegen(parser_state p) {
   // generate code for functions
   for (int i = 0; i < p.fv.length; i++) {
     function fn_data = p.fv.data[i];
-    printf("Generating %s\n", fn_data.name.str.data);
     // @Todo: parameters
     LLVMTypeRef params[0] = {};
     LLVMTypeRef functionType = LLVMFunctionType(LLVMInt32Type(), params, 0, 0);
@@ -134,17 +133,23 @@ void codegen(parser_state p) {
     char *error = NULL;
     LLVMVerifyModule(module, LLVMAbortProcessAction, &error);
     LLVMDisposeMessage(error);
-    LLVMDumpModule(module);
+    if (debug_dump_ir) LLVMDumpModule(module);
 
-    LLVMExecutionEngineRef engine;
-    LLVMLinkInMCJIT();
-    LLVMBool result =
-        LLVMCreateJITCompilerForModule(&engine, module, 3, &error);
-    if (result) {
-      printf("Failed to initialize: %s\n", error);
-      return;
+    if (jit) {
+      LLVMExecutionEngineRef engine;
+      LLVMLinkInMCJIT();
+      // @Todo: enter into main function
+      LLVMBool result =
+          LLVMCreateJITCompilerForModule(&engine, module, 3, &error);
+      if (result) {
+        printf("Failed to initialize: %s\n", error);
+        return;
+      }
+      int (*example)() = (int (*)())LLVMGetPointerToGlobal(engine, fn_llvm);
+      printf("result: %d\n", example());
+    } else {
+      printf("Outputting executables not implemented yet; use JIT\n");
+      exit(1);
     }
-    int (*example)() = (int (*)())LLVMGetPointerToGlobal(engine, fn_llvm);
-    printf("result: %d\n", example());
   }
 }

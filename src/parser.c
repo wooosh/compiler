@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "lexer.h"
 #include "misc.h"
+#include "options.h"
 
 #include <gc.h>
 #include <stdbool.h>
@@ -280,7 +281,7 @@ vec_function parse(vec_token tokens) {
       vec_push(&fn.body, parse_expression(tb, true, 0));
     }
     tb_pop(tb);
-    // print_function(fn);
+    if (debug_ast) print_function(fn);
     vec_push(&fl, fn);
   }
   return fl;

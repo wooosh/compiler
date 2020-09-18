@@ -9,9 +9,14 @@
 
 #include "lexer.h"
 #include "vec.h"
+#include "options.h"
 
 char *token_str(token t) {
   switch (t.type) {
+  case t_equals:
+    return "=";
+  case t_if:
+    return "if";
   case t_let:
     return "let";
   case t_lparen:
@@ -43,6 +48,10 @@ char *token_str(token t) {
 
 char *token_type_str(enum token_type t) {
   switch (t) {
+  case t_equals:
+    return "=";
+  case t_if:
+    return "if";
   case t_let:
     return "let";
   case t_operator:
@@ -174,6 +183,7 @@ token read_token(tracked_file *f) {
   vec_char_t str;
   vec_init(&str);
   bool is_num = true;
+  size_t char_idx = 0;
 
   // @Todo: eof handling
   while ((c = wgetc(f)) && (isalnum(c) || c == '_')) {
@@ -199,6 +209,9 @@ token read_token(tracked_file *f) {
         return t;
       } else if (strcmp("let", str.data) == 0) {
         t.type = t_let;
+        return t;
+      } else if (strcmp("if", str.data) == 0) {
+        t.type = t_if;
         return t;
       }
 
@@ -228,12 +241,13 @@ vec_token lex(char *filename) {
     vec_push(&tokens, t);
   } while (t.type != t_EOF);
 
-  /*
-  for (int i = 0; i < tokens.length; i++) {
-    t = tokens.data[i];
-    printf("%s:%zu:%zu: %s\n", t.pos.filename, t.pos.row, t.pos.col,
-           token_str(t));
-  }*/
+  if (debug_token_list) {
+    for (int i = 0; i < tokens.length; i++) {
+      t = tokens.data[i];
+      printf("%s:%zu:%zu: %s\n", t.pos.filename, t.pos.row, t.pos.col,
+             token_str(t));
+    }
+  }
 
   fclose(f.f);
   return tokens;

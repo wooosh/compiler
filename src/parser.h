@@ -53,6 +53,7 @@ struct declaration {
   type type;
   expression initial_value;
   bool is_const;
+  // @Todo: add optional assign here
 };
 
 struct param_pair {
