@@ -10,7 +10,7 @@ _test() {
   else
     ./cc "$1/input.c" 2>&1 > "$1/last_output"
   fi
-  
+
   testname="${1##*/}"
   if cmp "$1/last_output" "$1/output" >/dev/null; then
     printf "\033[42m PASS \033[0m $testname\n"
@@ -24,7 +24,7 @@ _test() {
 
 printf "\033[100m TESTS                                         \033[0m\n"
 
-for test_dir in tests/*; do 
+for test_dir in tests/*; do
     _test "$test_dir"
 done
 
