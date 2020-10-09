@@ -80,6 +80,7 @@ expression parse_fn_call(token_buf *tb) {
   struct fn_call *fnc = malloc(sizeof(struct fn_call));
   token t = tb_pop(tb);
   fnc->name = t;
+  // @Todo: quit if not lparen
   tb_pop(tb); // skip lparen
   vec_init(&fnc->params);
   if (tb_pop(tb).type != t_rparen) {
@@ -125,6 +126,34 @@ expression parse_expression(token_buf *tb, bool statement, int rbp) {
   token t = tb_pop(tb);
   switch (t.type) {
   // @Cleanup
+  case t_if:
+    if (!statement)
+      statement_mode_error(statement, t, "if statement");
+    // initialize struct to be an if statment
+    e.type = e_if;
+    e.if_stmt = malloc(sizeof(struct if_stmt));
+    vec_init(&e.if_stmt->body);
+    vec_init(&e.if_stmt->else_body);
+
+    e.if_stmt->cond = parse_expression(tb, false, 0);
+
+    token bracket;
+    try_pop_type(tb, bracket, "'{'", t_lbrace);
+    do {
+      vec_push(&e.if_stmt->body, parse_expression(tb, true, 0));
+    } while (tb_peek(tb).type != t_rbrace);
+    tb_pop(tb); // pop closing brace
+
+    if (tb_peek(tb).type == t_else) {
+      tb_pop(tb); // pop else
+      token bracket;
+      try_pop_type(tb, bracket, "'{'", t_lbrace);
+      do {
+        vec_push(&e.if_stmt->else_body, parse_expression(tb, true, 0));
+      } while (tb_peek(tb).type != t_rbrace);
+      tb_pop(tb); // pop closing brace
+    }
+    break;
   case t_let:
     if (!statement)
       statement_mode_error(statement, t, "declaration");
@@ -133,7 +162,7 @@ expression parse_expression(token_buf *tb, bool statement, int rbp) {
     e.decl->is_const = false;
     try_pop_type(tb, e.decl->name, "variable name", t_identifier);
     try_pop_type(tb, e.decl->type_tok, "type", t_identifier);
-    return e;
+    break;
   case t_return:
     if (!statement)
       statement_mode_error(statement, t, "return statement");
@@ -204,9 +233,35 @@ expression parse_expression(token_buf *tb, bool statement, int rbp) {
 // @Cleanup: clean recursive expression printer
 void print_expression(expression e) {
   switch (e.type) {
+  case e_declaration:
+    printf("let %s %s %s\n", e.decl->name.str.data, e.decl->type_tok.str.data);
+    break;
+  case e_assign:
+    printf("%s = ", e.assign->name.str.data,
+           token_type_str(e.assign->name.type));
+    print_expression(e.assign->value);
+    printf("\n");
+    break;
+  case e_if:
+    printf("if (");
+    print_expression(e.if_stmt->cond);
+    printf(") {\n");
+    for (int i = 0; i < e.if_stmt->body.length; i++) {
+      print_expression(e.if_stmt->body.data[i]);
+    }
+    printf("}\n");
+    if (e.if_stmt->else_body.length > 0) {
+      printf("else {\n");
+      for (int i = 0; i < e.if_stmt->else_body.length; i++) {
+        print_expression(e.if_stmt->else_body.data[i]);
+      }
+      printf("}\n");
+    }
+    break;
   case e_return:
     printf("return ");
     print_expression(*e.exp);
+    printf("\n");
     break;
   case e_integer_literal:
     printf("%d", e.tok.integer);
@@ -239,7 +294,6 @@ void print_function(function fn) {
   printf("body:\n");
   for (int i = 0; i < fn.body.length; i++) {
     print_expression(fn.body.data[i]);
-    printf("\n");
   }
 }
 // @Bug: handle EOF
@@ -281,7 +335,8 @@ vec_function parse(vec_token tokens) {
       vec_push(&fn.body, parse_expression(tb, true, 0));
     }
     tb_pop(tb);
-    if (debug_ast) print_function(fn);
+    if (debug_ast)
+      print_function(fn);
     vec_push(&fl, fn);
   }
   return fl;

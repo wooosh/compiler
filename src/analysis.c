@@ -59,7 +59,7 @@ void read_function_signature(function *f) {
   }
 }
 
-bool coerces(parser_state* p, expression e, type t) {
+bool coerces(parser_state *p, expression e, type t) {
   switch (e.type) {
   case e_reference:
     return type_equal(get_symbol(p, e.tok.str.data, 0).type, t);
@@ -78,11 +78,12 @@ void read_expression(parser_state *p, expression *e) {
   switch (e->type) {
   case e_reference: {
     if (get_symbol(p, e->tok.str.data, 0).name == NULL) {
-      printf("%s: Cannot reference '%s' before it is declared\n", token_location(e->tok), e->tok.str.data);
+      printf("%s: Cannot reference '%s' before it is declared\n",
+             token_location(e->tok), e->tok.str.data);
       print_token_loc(e->tok);
       exit(1);
     }
-    
+
     break;
   }
 
@@ -102,26 +103,28 @@ void read_expression(parser_state *p, expression *e) {
     vec_push(&p->symbol_stack, s);
     break;
   }
-  
+
   case e_assign: {
     read_expression(p, &e->assign->value);
     symbol s = get_symbol(p, e->assign->name.str.data, 0);
 
     // Make sure variable has been declared
     if (s.name == NULL) {
-      printf("%s: Cannot assign to '%s' before it is declared\n", token_location(e->assign->name), e->assign->name.str.data);
+      printf("%s: Cannot assign to '%s' before it is declared\n",
+             token_location(e->assign->name), e->assign->name.str.data);
       print_token_loc(e->assign->name);
       exit(1);
     }
-    
+
     // Make sure variable is not const
     if (s.is_const) {
       // @Todo: add location of definition
-      printf("%s: Cannot assign to '%s' because it is defined as const\n", token_location(e->assign->name), e->assign->name.str.data);
+      printf("%s: Cannot assign to '%s' because it is defined as const\n",
+             token_location(e->assign->name), e->assign->name.str.data);
       print_token_loc(e->assign->name);
       exit(1);
     }
-      
+
     // Make sure the types match
     if (!coerces(p, e->assign->value, s.type)) {
       // @Todo: add location of definition
@@ -167,8 +170,8 @@ void read_expression(parser_state *p, expression *e) {
     // @Todo: print "unknown function" if no function with matching name
     // @Todo: print type signatures
     // and "no function with matching signature" otherwise
-    printf("%s: Unknown function named '%s' with type signature given\n", token_location(name),
-           name.str.data);
+    printf("%s: Unknown function named '%s' with type signature given\n",
+           token_location(name), name.str.data);
     print_token_loc(name);
     exit(1);
   }
@@ -183,7 +186,22 @@ void read_expression(parser_state *p, expression *e) {
     return;
   }
 
+  case e_if: {
+    // @Todo: parse_vec_expression
+    enter_scope(p);
+    for (int i = 0; i < e->if_stmt->body.length; i++) {
+      read_expression(p, &e->if_stmt->body.data[i]);
+    }
+    exit_scope(p);
+    enter_scope(p);
+    for (int i = 0; i < e->if_stmt->else_body.length; i++) {
+      read_expression(p, &e->if_stmt->else_body.data[i]);
+    }
+    exit_scope(p);
+    return;
+  }
   default:
+    // @Todo: implement type checking on cond
     printf("unhandled type when reading expression %d\n", e->type);
     // exit(1);
   }

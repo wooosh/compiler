@@ -10,9 +10,10 @@ enum expression_type {
   e_fn_call,
   e_return,
   e_assign,
-  /*
-  e_assignment,
   e_if, // Includes else
+  e_declaration,
+
+  /*
   e_while,
   e_for,
   e_match
@@ -20,8 +21,7 @@ enum expression_type {
 
   // non-statements
   e_integer_literal,
-  e_reference, // @Consider: change to ref?
-  e_declaration,
+  e_reference,
 };
 
 struct fn_call;
@@ -37,9 +37,16 @@ typedef struct expression {
     struct fn_call *fn_call; // @Todo: figure out why this is a pointer
     struct declaration *decl;
     struct assignment *assign;
+    struct if_stmt *if_stmt;
   };
 } expression;
 typedef vec_t(expression) vec_expression;
+
+struct if_stmt {
+  expression cond;
+  vec_expression body;
+  vec_expression else_body;
+};
 
 struct assignment {
   token name;

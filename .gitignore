@@ -1,5 +1,5 @@
 cc
-tests/*/output
+tests/*/last_output
 *.swp
 .core
 *.o

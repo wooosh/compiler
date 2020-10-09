@@ -8,8 +8,8 @@
 #include <stdlib.h>
 
 #include "lexer.h"
-#include "vec.h"
 #include "options.h"
+#include "vec.h"
 
 char *token_str(token t) {
   switch (t.type) {
@@ -17,6 +17,10 @@ char *token_str(token t) {
     return "=";
   case t_if:
     return "if";
+  case t_else:
+    return "else";
+  case t_elif:
+    return "elif";
   case t_let:
     return "let";
   case t_lparen:
@@ -52,6 +56,10 @@ char *token_type_str(enum token_type t) {
     return "=";
   case t_if:
     return "if";
+  case t_else:
+    return "else";
+  case t_elif:
+    return "elif";
   case t_let:
     return "let";
   case t_operator:
@@ -212,6 +220,9 @@ token read_token(tracked_file *f) {
         return t;
       } else if (strcmp("if", str.data) == 0) {
         t.type = t_if;
+        return t;
+      } else if (strcmp("else", str.data) == 0) {
+        t.type = t_else;
         return t;
       }
 
