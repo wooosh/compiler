@@ -1,5 +1,5 @@
-cc
 tests/*/last_output
 *.swp
 .core
-*.o
+build
+bin
