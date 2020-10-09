@@ -4,7 +4,7 @@ headers = $(wildcard src/*.h)
 llvm_include := $(shell llvm-config --includedir)
 llvm_libs := $(shell llvm-config --libs)
 
-cc: $(obj) 
+cc: $(obj)
 	$(CC) $(CFLAGS) -g -I$(llvm_include)  $(llvm_libs) -lgc  -o $@ $^ $(LDFLAGS)
 
 $(obj): $(headers)
