@@ -22,8 +22,7 @@ int main(int argc, char **argv) {
     if (argv[i][0] == '-') {
       switch (argv[i][1]) {
       case 'd': {
-        if (i < argc) {
-          i++;
+        if (++i < argc) {
           if (strcmp(argv[i], "lexer") == 0)
             debug_token_list = true;
           else if (strcmp(argv[i], "ast") == 0)
