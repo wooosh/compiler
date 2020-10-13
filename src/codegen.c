@@ -3,6 +3,7 @@
 #define realloc GC_REALLOC
 
 #include "analysis.h"
+#include "ast.h"
 #include "lexer.h"
 #include "options.h"
 #include "parser.h"
@@ -23,23 +24,6 @@
 #include <llvm-c/TargetMachine.h>
 #include <llvm-c/Types.h>
 
-// @Todo: rename all structs so naming conflicts don't happen
-// codegen symbol
-typedef struct c_symbol {
-  // alloc'd location
-  LLVMValueRef v;
-  char *name;
-} c_symbol;
-
-typedef vec_t(c_symbol) vec_c_symbol;
-// used to store codegen internal state
-struct state {
-  LLVMBuilderRef b;
-  LLVMValueRef fn; // Current function in codegen
-  // vec_int_t scope_indexes;
-  vec_c_symbol symbol_stack;
-};
-
 LLVMValueRef get_c_symbol(struct state *state, char *name) {
   for (int i = state->symbol_stack.length - 1; i >= 0; i--) {
     if (strcmp(name, state->symbol_stack.data[i].name) == 0) {
@@ -51,27 +35,11 @@ LLVMValueRef get_c_symbol(struct state *state, char *name) {
 LLVMValueRef exp_to_val(struct state *state, expression e) {
   switch (e.type) {
   case e_integer_literal:
-    // @Todo: coerce to proper type
-    // @Todo: tag integer literals with their determined type during analysis
-    return LLVMConstInt(LLVMInt32Type(), e.tok.integer, true);
+    return generate_literal(state, e);
   case e_reference:
-    return LLVMBuildLoad(state->b, get_c_symbol(state, e.tok.str.data),
-                         "reference");
-  case e_fn_call: {
-    struct fn_call fnc = *e.fn_call;
-    if (fnc.fn->builtin) {
-      switch (fnc.name.str.data[0]) {
-      case '+':
-        return LLVMBuildAdd(state->b, exp_to_val(state, fnc.params.data[0]),
-                            exp_to_val(state, fnc.params.data[1]), "addtmp");
-      case '*':
-        return LLVMBuildMul(state->b, exp_to_val(state, fnc.params.data[0]),
-                            exp_to_val(state, fnc.params.data[1]), "multtmp");
-      }
-      // Intentional fall through
-    }
-    // Intentional fall through
-  }
+    return generate_reference(state, e);
+  case e_fn_call:
+    return generate_fn_call(state, e);
   default:
     printf("??? exp_to_val %d\n", e.type);
     exit(1);
@@ -80,69 +48,15 @@ LLVMValueRef exp_to_val(struct state *state, expression e) {
 
 void generate_statement(struct state *state, expression e) {
   switch (e.type) {
-  case e_if: {
-    LLVMValueRef cond = exp_to_val(state, e.if_stmt->cond);
-    // @Todo: cast to boolean instead of using int32
-    LLVMValueRef cmp =
-        LLVMBuildICmp(state->b, LLVMIntEQ, cond,
-                      LLVMConstInt(LLVMInt32Type(), 1, true), "ifcond");
-
-    LLVMBasicBlockRef then_block = LLVMAppendBasicBlock(state->fn, "then");
-    LLVMBasicBlockRef else_block =
-        LLVMCreateBasicBlockInContext(LLVMGetGlobalContext(), "else");
-    LLVMBasicBlockRef merge_block =
-        LLVMCreateBasicBlockInContext(LLVMGetGlobalContext(), "ifcont");
-
-    LLVMBuildCondBr(state->b, cmp, then_block, else_block);
-
-    // Emit then block
-    LLVMPositionBuilderAtEnd(state->b, then_block);
-
-    // @Todo: create new scope in if statement
-    vec_expression body = e.if_stmt->body;
-    for (int i = 0; i < body.length; i++) {
-      generate_statement(state, body.data[i]);
-    }
-
-    // Add a terminator if the block does not already have one
-    then_block = LLVMGetInsertBlock(state->b);
-    if (LLVMGetBasicBlockTerminator(then_block) == NULL)
-      LLVMBuildBr(state->b, merge_block);
-
-    // Emit else block
-    LLVMAppendExistingBasicBlock(state->fn, else_block);
-    LLVMPositionBuilderAtEnd(state->b, else_block);
-
-    vec_expression else_body = e.if_stmt->else_body;
-    for (int i = 0; i < else_body.length; i++) {
-      generate_statement(state, else_body.data[i]);
-    }
-
-    if (LLVMGetBasicBlockTerminator(else_block) == NULL)
-      LLVMBuildBr(state->b, merge_block);
-
-    else_block = LLVMGetInsertBlock(state->b);
-
-    // Emit merge block
-    LLVMAppendExistingBasicBlock(state->fn, merge_block);
-    LLVMPositionBuilderAtEnd(state->b, merge_block);
-
-    break;
-  }
-  case e_declaration: {
-    c_symbol s = {LLVMBuildAlloca(state->b, LLVMInt32Type(), "variable"),
-                  e.decl->name.str.data};
-    vec_push(&state->symbol_stack, s);
-    break;
-  }
-  case e_assign: {
-    LLVMBuildStore(state->b, exp_to_val(state, e.assign->value),
-                   get_c_symbol(state, e.assign->name.str.data));
-    break;
-  }
+  // @Todo: add function call statement
+  case e_if:
+    return generate_if_stmt(state, e);
+  case e_assign:
+    return generate_assignment(state, e);
+  case e_declaration:
+    return generate_decl(state, e);
   case e_return:
-    LLVMBuildRet(state->b, exp_to_val(state, *e.exp));
-    break;
+    return generate_return(state, e);
   default:
     printf("??? unknown statement\n");
     exit(1);
@@ -201,7 +115,7 @@ void codegen(parser_state p) {
         return;
       }
       int (*example)() = (int (*)())LLVMGetPointerToGlobal(engine, fn_llvm);
-      printf("result: %d\n", example());
+      printf("%d\n", example());
     } else {
       printf("Outputting executables not implemented yet; use JIT\n");
       exit(1);

@@ -3,9 +3,12 @@
 #define realloc GC_REALLOC
 
 #include "analysis.h"
+#include "ast.h"
+#include "builtins.h"
 #include "lexer.h"
 #include "parser.h"
 
+// @Todo: rename parser_state to analyzer_state
 // @Todo: make return check that the return value is on the same row
 
 #include "misc.h"
@@ -76,153 +79,28 @@ bool coerces(parser_state *p, expression e, type t) {
 
 void read_expression(parser_state *p, expression *e) {
   switch (e->type) {
-  case e_reference: {
-    if (get_symbol(p, e->tok.str.data, 0).name == NULL) {
-      printf("%s: Cannot reference '%s' before it is declared\n",
-             token_location(e->tok), e->tok.str.data);
-      print_token_loc(e->tok);
-      exit(1);
-    }
-
-    break;
-  }
-
-  case e_declaration: {
-    struct declaration *decl = e->decl;
-    // Make sure the symbol is not already declared in the current scope
-    if (get_symbol(p, decl->name.str.data, p->scope_indexes.length).name !=
-        NULL) {
-      // @Todo: show other definition
-      printf("%s: Symbol '%s' already declared\n", token_location(decl->name),
-             decl->name.str.data);
-      print_token_loc(decl->name);
-      exit(1);
-    }
-    decl->type = parse_type(decl->type_tok);
-    symbol s = {decl->is_const, decl->name.str.data, decl->type};
-    vec_push(&p->symbol_stack, s);
-    break;
-  }
-
-  case e_assign: {
-    read_expression(p, &e->assign->value);
-    symbol s = get_symbol(p, e->assign->name.str.data, 0);
-
-    // Make sure variable has been declared
-    if (s.name == NULL) {
-      printf("%s: Cannot assign to '%s' before it is declared\n",
-             token_location(e->assign->name), e->assign->name.str.data);
-      print_token_loc(e->assign->name);
-      exit(1);
-    }
-
-    // Make sure variable is not const
-    if (s.is_const) {
-      // @Todo: add location of definition
-      printf("%s: Cannot assign to '%s' because it is defined as const\n",
-             token_location(e->assign->name), e->assign->name.str.data);
-      print_token_loc(e->assign->name);
-      exit(1);
-    }
-
-    // Make sure the types match
-    if (!coerces(p, e->assign->value, s.type)) {
-      // @Todo: add location of definition
-      // @Todo: print mismatched types
-      printf("%s: Mismatched types\n", token_location(e->assign->name));
-      print_token_loc(e->assign->name);
-      exit(1);
-    };
-    break;
-  }
-
-  case e_fn_call: {
-    // check if function exists
-    struct fn_call *fnc = e->fn_call;
-    token name = fnc->name;
-
-    for (int i = 0; i < fnc->params.length; i++) {
-      read_expression(p, &fnc->params.data[i]);
-    }
-    // @Todo: use symbol table instead of function table
-    for (int i = 0; i < p->symbol_stack.length; i++) {
-      // @Todo: make symbol and function table be shared for lambdas and stuff
-      symbol s = p->symbol_stack.data[i];
-      if (s.type.type == tt_fn && strcmp(s.name, name.str.data) == 0) {
-        // @Todo: match function signature
-        // @Todo: figure out constant type coercion with coerces_to(uint,
-        // types[])
-        function *fn = s.type.fn;
-        if (fn->params.length != fnc->params.length)
-          continue;
-
-        for (int i = 0; i < fn->params.length; i++) {
-          if (!coerces(p, fnc->params.data[i], fn->params.data[i].type)) {
-            goto next;
-          }
-        }
-
-        fnc->fn = fn;
-        return;
-      }
-    next:;
-    }
-    // @Todo: print "unknown function" if no function with matching name
-    // @Todo: print type signatures
-    // and "no function with matching signature" otherwise
-    printf("%s: Unknown function named '%s' with type signature given\n",
-           token_location(name), name.str.data);
-    print_token_loc(name);
-    exit(1);
-  }
-
+  case e_fn_call:
+    return analyze_fn_call(p, e);
+  case e_reference:
+    return analyze_reference(p, e);
+  case e_assign:
+    return analyze_assignment(p, e);
+  case e_declaration:
+    return analyze_decl(p, e);
   case e_return:
-    // @Todo: read_expression of return value
-    read_expression(p, e->exp);
+    return analyze_return(p, e);
+  case e_if:
+    return analyze_if_stmt(p, e);
+  case e_integer_literal:
     return;
-
-  case e_integer_literal: {
-    // No type checking needed
-    return;
-  }
-
-  case e_if: {
-    // @Todo: parse_vec_expression
-    enter_scope(p);
-    for (int i = 0; i < e->if_stmt->body.length; i++) {
-      read_expression(p, &e->if_stmt->body.data[i]);
-    }
-    exit_scope(p);
-    enter_scope(p);
-    for (int i = 0; i < e->if_stmt->else_body.length; i++) {
-      read_expression(p, &e->if_stmt->else_body.data[i]);
-    }
-    exit_scope(p);
-    return;
-  }
   default:
-    // @Todo: implement type checking on cond
     printf("unhandled type when reading expression %d\n", e->type);
     // exit(1);
   }
 }
 
-vec_param_pair builtin_params(struct param_pair *params, size_t num_params) {
-  vec_param_pair vparams;
-  vec_init(&vparams);
-  vec_pusharr(&vparams, params, num_params);
-  return vparams;
-}
-
-token builtin_token(char *str) {
-  vec_char_t vstr;
-  vec_init(&vstr);
-  vec_pusharr(&vstr, str, strlen(str) + 1);
-  return (token){t_identifier, {NULL, 0, 0, 0, 0}, vstr};
-}
-
 parser_state analyse(vec_function fv) {
-  // @Todo: create type tables
+  // @Todo: analyze type definitions and create type lookups in parser state
   // @Todo: create canonical symbol names for generics and multiple dispatch,
   // which function calls structs will contain a pointer to
   parser_state p;
@@ -231,36 +109,7 @@ parser_state analyse(vec_function fv) {
 
   // @Todo: move to builtins.h
   // add builtins to symbol table
-  // @Todo: add type annotations
-  function *add = malloc(sizeof(function));
-  add->builtin = true;
-  add->return_type_tok = builtin_token("sint");
-  add->return_type = (type){tt_sint};
-  add->name = builtin_token("+");
-  add->params = builtin_params(
-      (struct param_pair[]){
-          {builtin_token("a"), builtin_token("sint"), (type){tt_sint}},
-          {builtin_token("b"), builtin_token("sint"), (type){tt_sint}},
-      },
-      2);
-  symbol add_s = (symbol){true, "+", (type){tt_fn, add}};
-  vec_push(&p.symbol_stack, add_s);
-
-  function *mult = malloc(sizeof(function));
-  mult->builtin = true;
-  mult->return_type_tok = builtin_token("sint");
-  mult->return_type = (type){tt_sint};
-  mult->name = builtin_token("*");
-  mult->params = builtin_params(
-      (struct param_pair[]){
-          {builtin_token("a"), builtin_token("sint"), (type){tt_sint}},
-          {builtin_token("b"), builtin_token("sint"), (type){tt_sint}},
-      },
-      2);
-
-  // needs to be a seperate line because vec_push is a macro
-  symbol mult_s = (symbol){true, "*", (type){tt_fn, mult}};
-  vec_push(&p.symbol_stack, mult_s);
+  add_builtins(&p);
 
   // build function table
   for (int i = 0; i < fv.length; i++) {

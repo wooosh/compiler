@@ -5,6 +5,15 @@
 #include "stdbool.h"
 #include "type.h"
 
+typedef struct token_buf {
+  token *tokens;
+  size_t idx;
+} token_buf;
+
+token tb_pop(token_buf *tb);
+void tb_unpop(token_buf *tb);
+token tb_peek(token_buf *tb);
+
 enum expression_type {
   // statements
   e_fn_call,
@@ -24,16 +33,12 @@ enum expression_type {
   e_reference,
 };
 
-struct fn_call;
-struct expression;
-struct declaration;
-
 typedef struct expression {
   enum expression_type type;
   // @Todo: work position in?
   union {
     struct expression *exp;  // return value
-    token tok;               // variable reference
+    token tok;               // variable reference/literal @Todo: fix
     struct fn_call *fn_call; // @Todo: figure out why this is a pointer
     struct declaration *decl;
     struct assignment *assign;
@@ -41,27 +46,6 @@ typedef struct expression {
   };
 } expression;
 typedef vec_t(expression) vec_expression;
-
-struct if_stmt {
-  expression cond;
-  vec_expression body;
-  vec_expression else_body;
-};
-
-struct assignment {
-  token name;
-  expression value;
-};
-
-// @Todo: clean up inconsistent typedefs
-struct declaration {
-  token name;
-  token type_tok;
-  type type;
-  expression initial_value;
-  bool is_const;
-  // @Todo: add optional assign here
-};
 
 struct param_pair {
   token name;
@@ -85,9 +69,15 @@ typedef struct function {
 typedef vec_t(function) vec_function;
 vec_function parse(vec_token tokens);
 
-struct fn_call {
-  token name;
-  vec_expression params;
-  function *fn;
-};
+// @Todo: split AST and parser stuff into seperate headers
+void statement_mode_error(bool statement, token t, char *found);
+expression parse_expression(token_buf *tb, bool statement, int rbp);
+// @Todo: rename to reflect token_types, not actual types
+int compare_types(token t, enum token_type ts[], char *desc);
+
+#define try_pop_types(TB, T, DESC, TYPES...)                                   \
+  T = tb_pop(TB);                                                              \
+  if (!compare_types(T, (enum token_type[]){TYPES, t_EOF}, DESC))              \
+    exit(1);
+#define try_pop_type try_pop_types
 #endif

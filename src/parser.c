@@ -1,15 +1,11 @@
 #include "parser.h"
+#include "ast.h"
 #include "lexer.h"
 #include "misc.h"
 #include "options.h"
 
 #include <gc.h>
 #include <stdbool.h>
-
-typedef struct token_buf {
-  token *tokens;
-  size_t idx;
-} token_buf;
 
 // @Todo: check for EOF
 token tb_pop(token_buf *tb) {
@@ -74,26 +70,6 @@ int compare_types(token t, enum token_type ts[], char *desc) {
 
 expression parse_expression(token_buf *tb, bool statement, int rbp);
 
-expression parse_fn_call(token_buf *tb) {
-  expression e;
-  e.type = e_fn_call;
-  struct fn_call *fnc = malloc(sizeof(struct fn_call));
-  token t = tb_pop(tb);
-  fnc->name = t;
-  // @Todo: quit if not lparen
-  tb_pop(tb); // skip lparen
-  vec_init(&fnc->params);
-  if (tb_pop(tb).type != t_rparen) {
-    tb_unpop(tb);
-    do {
-      vec_push(&fnc->params, parse_expression(tb, false, 0));
-      try_pop_types(tb, t, NULL, t_comma, t_rparen);
-    } while (t.type != t_rparen);
-  }
-  e.fn_call = fnc;
-  return e;
-}
-
 void statement_mode_error(bool statement, token t, char *found) {
   char *mode;
   if (statement)
@@ -125,80 +101,30 @@ expression parse_expression(token_buf *tb, bool statement, int rbp) {
   expression e;
   token t = tb_pop(tb);
   switch (t.type) {
-  // @Cleanup
   case t_if:
-    if (!statement)
-      statement_mode_error(statement, t, "if statement");
-    // initialize struct to be an if statment
-    e.type = e_if;
-    e.if_stmt = malloc(sizeof(struct if_stmt));
-    vec_init(&e.if_stmt->body);
-    vec_init(&e.if_stmt->else_body);
-
-    e.if_stmt->cond = parse_expression(tb, false, 0);
-
-    token bracket;
-    try_pop_type(tb, bracket, "'{'", t_lbrace);
-    do {
-      vec_push(&e.if_stmt->body, parse_expression(tb, true, 0));
-    } while (tb_peek(tb).type != t_rbrace);
-    tb_pop(tb); // pop closing brace
-
-    if (tb_peek(tb).type == t_else) {
-      tb_pop(tb); // pop else
-      token bracket;
-      try_pop_type(tb, bracket, "'{'", t_lbrace);
-      do {
-        vec_push(&e.if_stmt->else_body, parse_expression(tb, true, 0));
-      } while (tb_peek(tb).type != t_rbrace);
-      tb_pop(tb); // pop closing brace
-    }
+    e = parse_if_stmt(tb, t, statement);
     break;
   case t_let:
-    if (!statement)
-      statement_mode_error(statement, t, "declaration");
-    e.type = e_declaration;
-    e.decl = malloc(sizeof(struct declaration));
-    e.decl->is_const = false;
-    try_pop_type(tb, e.decl->name, "variable name", t_identifier);
-    try_pop_type(tb, e.decl->type_tok, "type", t_identifier);
+    e = parse_let(tb, t, statement);
     break;
   case t_return:
-    if (!statement)
-      statement_mode_error(statement, t, "return statement");
-    e.type = e_return;
-    expression *return_value = malloc(sizeof(expression));
-    *return_value = parse_expression(tb, false, 0);
-    e.exp = return_value;
-    break;
-  case t_identifier:                            // fn call or var
-    if (tb->tokens[tb->idx].type == t_lparen) { // fn call
-      tb_unpop(tb);
-      e = parse_fn_call(tb);
-    } else { // variable
-      if (tb_peek(tb).type == t_equals) {
-        if (!statement)
-          statement_mode_error(statement, t, "variable assignment");
-        tb_pop(tb);
-        struct assignment *a = malloc(sizeof(struct assignment));
-        a->name = t;
-        a->value = parse_expression(tb, false, 0);
-
-        e.type = e_assign;
-        e.assign = a;
-      } else {
-        if (statement)
-          statement_mode_error(statement, t, "variable reference");
-        e.type = e_reference;
-        e.tok = t;
-      }
-    }
+    e = parse_return(tb, t, statement);
     break;
   case t_literal:
-    if (statement)
-      statement_mode_error(statement, t, "integer literal");
-    e.type = e_integer_literal;
-    e.tok = t;
+    e = parse_literal(tb, t, statement);
+    break;
+  case t_identifier: // variable reference, assignment, or fn call
+    switch (tb_peek(tb).type) {
+    case t_lparen:
+      e = parse_fn_call(tb, t, statement);
+      break;
+    case t_equals:
+      e = parse_assignment(tb, t, statement);
+      break;
+    default:
+      e = parse_reference(tb, t, statement);
+      break;
+    }
     break;
   default:;
     printf("??? %s %s\n", token_type_str(t.type),

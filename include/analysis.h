@@ -16,5 +16,15 @@ typedef struct parser_state {
   vec_function fv;
 } parser_state;
 
+void enter_scope(parser_state *p);
+void exit_scope(parser_state *p);
+symbol get_symbol(parser_state *p, char *name, int max_scope);
+
+// @Todo: s/parse/analyze/
+type parse_type(token tok);
+bool coerces(parser_state *p, expression e, type t);
+
+void read_expression(parser_state *p, expression *e);
+
 parser_state analyse(vec_function fv);
 #endif

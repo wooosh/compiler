@@ -9,7 +9,13 @@ list(APPEND COMPILER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/main.c
   ${CMAKE_CURRENT_LIST_DIR}/misc.c
   ${CMAKE_CURRENT_LIST_DIR}/parser.c
+  ${CMAKE_CURRENT_LIST_DIR}/builtins.c
   ${CMAKE_CURRENT_LIST_DIR}/type.c
+  ${CMAKE_CURRENT_LIST_DIR}/ast/if_stmt.c
+  ${CMAKE_CURRENT_LIST_DIR}/ast/return.c
+  ${CMAKE_CURRENT_LIST_DIR}/ast/variables.c
+  ${CMAKE_CURRENT_LIST_DIR}/ast/literals.c
+  ${CMAKE_CURRENT_LIST_DIR}/ast/fn_call.c
   ${CMAKE_CURRENT_LIST_DIR}/vec.c)
 
 # tell cmake about our executable

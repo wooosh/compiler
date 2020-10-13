@@ -2,20 +2,26 @@
 #define TYPE_H
 #include <stdbool.h>
 
-#define NUM_BUILTIN_TYPES 12
+#define NUM_BUILTIN_TYPES 13
 const char *builtin_types[NUM_BUILTIN_TYPES];
 enum type_type {
   // @Todo: float stuff
+  // unsigned int
   tt_u8,
   tt_u16,
   tt_u32,
   tt_u64,
   tt_uint,
+
+  // signed int
   tt_s8,
   tt_s16,
   tt_s32,
   tt_s64,
   tt_sint,
+
+  // misc
+  tt_bool,
   tt_byte,
   tt_void,
   tt_ptr,
