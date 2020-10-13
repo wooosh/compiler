@@ -158,6 +158,17 @@ token read_token(tracked_file *f) {
   }
 
   switch (c) {
+  case '/': {
+    // @Todo: add block comments
+    char c2;
+    if ((c2 = wgetc(f)) == '/') { // Start of comment
+      while (wgetc(f) != '\n')
+        ;
+      return read_token(f);
+    }
+    wungetc(c2,f);
+    // fall through
+  }
   case '+':
   case '*':
     t.type = t_operator;
