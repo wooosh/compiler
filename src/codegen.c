@@ -98,11 +98,12 @@ void codegen(parser_state p) {
       generate_statement(&state, fn_data.body.data[j]);
     }
 
+    if (debug_dump_ir)
+      LLVMDumpModule(module);
+
     char *error = NULL;
     LLVMVerifyModule(module, LLVMAbortProcessAction, &error);
     LLVMDisposeMessage(error);
-    if (debug_dump_ir)
-      LLVMDumpModule(module);
 
     if (jit) {
       LLVMExecutionEngineRef engine;

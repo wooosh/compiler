@@ -77,6 +77,7 @@ LLVMValueRef generate_fn_call(struct state *state, expression e) {
                           exp_to_val(state, fnc.params.data[1]), "multtmp");
     }
   }
+  // @Todo: support normal functions
   printf("unknown function; only builtins are supported currently\n");
   exit(1);
 }

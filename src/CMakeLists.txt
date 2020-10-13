@@ -33,10 +33,13 @@ target_link_libraries(${TARGET_NAME}
   ${LIBGC}
   ${LLVM_LIBS})
 
+#target_link_libraries(${TARGET_NAME} debug
+#  -fsanitize=address -fsanitize=undefined
+#)
 target_compile_options(${TARGET_NAME} PRIVATE
   # use -g for debug, -O3 for release
   $<$<CONFIG:Debug>:
-  -g
+  -g #-fsanitize=address -fsanitize=undefined
   >
 
   $<$<CONFIG:Release>:

@@ -8,7 +8,7 @@ _test() {
   if [ -x "$1/cmd" ]; then
     "$1/cmd" 2>&1 > "$1/last_output"
   else
-    ./bin/cc "$1/input.c" 2>&1 > "$1/last_output"
+    ./bin/cc -j "$1/input.c" 2>&1 > "$1/last_output"
   fi
 
   testname="${1##*/}"

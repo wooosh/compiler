@@ -12,4 +12,5 @@ void print_token_loc(token t) {
   for (int i = 0; i < t.pos.len; i++)
     printf("^");
   printf("\x1b[0m\n");
+  free(line);
 }

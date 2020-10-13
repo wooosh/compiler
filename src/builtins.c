@@ -12,6 +12,7 @@ token type_token(type t) { return builtin_token("type"); }
 void add_builtin(parser_state *p, char *name, type return_type, type *args,
                  char **argnames, size_t num_args) {
   function *fn = malloc(sizeof(function));
+
   fn->builtin = true;
   fn->return_type_tok = type_token(return_type);
   fn->return_type = return_type;

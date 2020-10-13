@@ -90,10 +90,9 @@ void generate_if_stmt(struct state *state, expression e) {
     generate_statement(state, else_body.data[i]);
   }
 
+  else_block = LLVMGetInsertBlock(state->b);
   if (LLVMGetBasicBlockTerminator(else_block) == NULL)
     LLVMBuildBr(state->b, merge_block);
-
-  else_block = LLVMGetInsertBlock(state->b);
 
   // Emit merge block
   LLVMAppendExistingBasicBlock(state->fn, merge_block);
