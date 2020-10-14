@@ -32,8 +32,8 @@ void add_builtin(parser_state *p, char *name, type return_type, type *args,
 
 void add_builtins(parser_state *p) {
   // @Todo: add math operators for all types
-  add_builtin(p, "+", (type){tt_sint}, (type[]){{tt_sint}, {tt_sint}},
+  add_builtin(p, "+", (type){tt_s64}, (type[]){{tt_s64}, {tt_s64}},
               (char *[]){"a", "b"}, 2);
-  add_builtin(p, "*", (type){tt_sint}, (type[]){{tt_sint}, {tt_sint}},
+  add_builtin(p, "*", (type){tt_s64}, (type[]){{tt_s64}, {tt_s64}},
               (char *[]){"a", "b"}, 2);
 }

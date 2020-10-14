@@ -68,7 +68,7 @@ void analyze_assignment(parser_state *p, expression *e) {
   }
 
   // Make sure the types match
-  if (!coerces(p, e->assign->value, s.type)) {
+  if (!coerces(p, &e->assign->value, s.type, true)) {
     // @Todo: add location of definition
     // @Todo: print mismatched types
     printf("%s: Mismatched types\n", token_location(e->assign->name));
@@ -112,7 +112,7 @@ void analyze_decl(parser_state *p, expression *e) {
 }
 
 void generate_decl(struct state *state, expression e) {
-  c_symbol s = {LLVMBuildAlloca(state->b, LLVMInt32Type(), "variable"),
+  c_symbol s = {LLVMBuildAlloca(state->b, to_llvm_type(e.decl->type), "variable"),
                 e.decl->name.str.data};
   vec_push(&state->symbol_stack, s);
 }

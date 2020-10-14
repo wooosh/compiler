@@ -45,12 +45,20 @@ void analyze_fn_call(parser_state *p, expression *e) {
       if (fn->params.length != fnc->params.length)
         continue;
 
+      // Check if parameters are type compatible
       for (int i = 0; i < fn->params.length; i++) {
-        if (!coerces(p, fnc->params.data[i], fn->params.data[i].type)) {
+        // @Todo: use casts from coerces
+        if (!coerces(p, &fnc->params.data[i], fn->params.data[i].type, false)) {
           goto next;
         }
       }
-
+      
+      // Write any neccesary typecasts
+      for (int i = 0; i < fn->params.length; i++) {
+        // @Todo: use casts from coerces
+        coerces(p, &fnc->params.data[i], fn->params.data[i].type, true);
+      }
+      
       fnc->fn = fn;
       return;
     }

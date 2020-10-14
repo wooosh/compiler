@@ -16,6 +16,7 @@ list(APPEND COMPILER_SOURCES
   ${CMAKE_CURRENT_LIST_DIR}/ast/variables.c
   ${CMAKE_CURRENT_LIST_DIR}/ast/literals.c
   ${CMAKE_CURRENT_LIST_DIR}/ast/fn_call.c
+  ${CMAKE_CURRENT_LIST_DIR}/ast/casts.c
   ${CMAKE_CURRENT_LIST_DIR}/vec.c)
 
 # tell cmake about our executable

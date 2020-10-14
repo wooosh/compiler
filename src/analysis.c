@@ -39,6 +39,7 @@ symbol get_symbol(parser_state *p, char *name, int max_scope) {
   return (symbol){false, NULL};
 }
 
+// @Todo: fix
 type parse_type(token tok) {
   type t;
   for (int i = 0; i < NUM_BUILTIN_TYPES; i++) {
@@ -62,19 +63,61 @@ void read_function_signature(function *f) {
   }
 }
 
-bool coerces(parser_state *p, expression e, type t) {
-  switch (e.type) {
+bool coerces(parser_state *p, expression *e, type t, bool write_cast) {
+  type e_type;
+  switch (e->type) {
   case e_reference:
-    return type_equal(get_symbol(p, e.tok.str.data, 0).type, t);
+    e_type = get_symbol(p, e->tok.str.data, 0).type;
+    break;
   case e_fn_call:
-    return type_equal(e.fn_call->fn->return_type, t);
+    e_type = e->fn_call->fn->return_type;
+    break;
   // @Todo: add casts to for non-sint's
   case e_integer_literal:
-    return t.type == tt_sint;
+    // @Todo: find smallest amount that the value of the int fits in
+    e_type.type = tt_int_literal;
+    break;
   default:
     printf("warning: automatically coercing unknown type\n");
     return true;
   }
+
+  // @Todo: check if literal can fit in the type
+  if (is_scalar(t) && e_type.type == tt_int_literal) {
+    if (write_cast) e->int_literal->type = t;
+    return true;
+  }
+
+  // Prepare for AST rewrite if we are going to cast
+  // NOTE: integer literals don't require inserting a cast into the AS, which is
+  // why they are checked before this block
+  expression cast_e;
+  if (write_cast) {
+      cast_e.cast = malloc(sizeof(struct cast));
+      cast_e.type = e_cast;
+      cast_e.cast->exp = *e;
+      cast_e.cast->from = e_type;
+  }
+ 
+  // all scalar types can be cast to bool 
+  if (t.type == tt_bool && is_scalar(e_type)) {
+    if (write_cast) {
+      cast_e.cast->to = t;
+      memcpy(e, &cast_e, sizeof(expression));
+    }
+    return true;
+  }
+
+  // integers can promote to a higher precision of the same sign
+  if (is_scalar(t) && is_scalar(e_type) && is_signed(t) == is_signed(e_type) && t.type > e_type.type) {
+    if (write_cast) {
+      cast_e.cast->to = t;
+      memcpy(e, &cast_e, sizeof(expression));
+    }
+    return true;
+  }
+
+  return type_equal(e_type, t);
 }
 
 void read_expression(parser_state *p, expression *e) {

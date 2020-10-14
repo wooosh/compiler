@@ -32,8 +32,31 @@ LLVMValueRef get_c_symbol(struct state *state, char *name) {
   }
 }
 
+LLVMTypeRef to_llvm_type(type a) {
+  switch(a.type) {
+  case tt_void: return LLVMVoidType();
+
+  case tt_u8:
+  case tt_s8: return LLVMInt8Type();
+
+  case tt_u16:
+  case tt_s16: return LLVMInt16Type();
+
+  case tt_u32:
+  case tt_s32: return LLVMInt32Type();
+
+  case tt_u64:
+  case tt_s64: return LLVMInt64Type();
+
+  // @Todo: proper error
+  default: printf("can't translate type %d\n", a.type); exit(1);
+  }
+}
+
 LLVMValueRef exp_to_val(struct state *state, expression e) {
   switch (e.type) {
+  case e_cast:
+    return generate_cast(state, e);
   case e_integer_literal:
     return generate_literal(state, e);
   case e_reference:
@@ -81,7 +104,7 @@ void codegen(parser_state p) {
     function fn_data = p.fv.data[i];
     // @Todo: parameters
     LLVMTypeRef params[0] = {};
-    LLVMTypeRef functionType = LLVMFunctionType(LLVMInt32Type(), params, 0, 0);
+    LLVMTypeRef functionType = LLVMFunctionType(to_llvm_type(fn_data.return_type), params, 0, 0);
 
     // set up function
     LLVMValueRef fn_llvm =

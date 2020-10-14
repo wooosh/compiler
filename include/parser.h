@@ -31,6 +31,7 @@ enum expression_type {
   // non-statements
   e_integer_literal,
   e_reference,
+  e_cast
 };
 
 typedef struct expression {
@@ -38,11 +39,13 @@ typedef struct expression {
   // @Todo: work position in?
   union {
     struct expression *exp;  // return value
-    token tok;               // variable reference/literal @Todo: fix
+    token tok;               // variable reference @Todo: fix
     struct fn_call *fn_call; // @Todo: figure out why this is a pointer
     struct declaration *decl;
     struct assignment *assign;
     struct if_stmt *if_stmt;
+    struct cast *cast;
+    struct int_literal* int_literal;
   };
 } expression;
 typedef vec_t(expression) vec_expression;

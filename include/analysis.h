@@ -22,7 +22,9 @@ symbol get_symbol(parser_state *p, char *name, int max_scope);
 
 // @Todo: s/parse/analyze/
 type parse_type(token tok);
-bool coerces(parser_state *p, expression e, type t);
+
+// will rewrite expression if write_cast is set
+bool coerces(parser_state *p, expression *e, type t, bool write_cast);
 
 void read_expression(parser_state *p, expression *e);
 

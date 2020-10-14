@@ -7,6 +7,15 @@
 
 #include <llvm-c/Core.h>
 
+// Casts
+struct cast {
+  expression exp;
+  type from;
+  type to;
+};
+
+LLVMValueRef generate_cast(struct state *state, expression e);
+
 // Function calls
 struct fn_call {
   token name;
@@ -21,6 +30,10 @@ LLVMValueRef generate_fn_call(struct state *state, expression e);
 // Literals
 // @Todo: distinguish between literal types, as eventually we will have >1 type
 // of literals (eg arrays/strings/struct definitions, numbers)
+struct int_literal {
+  token val;
+  type type;
+};
 expression parse_literal(token_buf *tb, token t, bool statement);
 LLVMValueRef generate_literal(struct state *state, expression e);
 

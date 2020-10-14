@@ -2,6 +2,7 @@
 #define CODEGEN_H
 #include "analysis.h"
 #include "parser.h"
+#include "type.h"
 
 #include <llvm-c/Core.h>
 
@@ -23,6 +24,7 @@ struct state {
 
 LLVMValueRef get_c_symbol(struct state *state, char *name);
 
+LLVMTypeRef to_llvm_type(type a);
 LLVMValueRef exp_to_val(struct state *state, expression e);
 void generate_statement(struct state *state, expression e);
 void codegen(parser_state p);

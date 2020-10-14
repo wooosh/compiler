@@ -40,6 +40,13 @@ expression parse_if_stmt(token_buf *tb, token t, bool statement) {
 void analyze_if_stmt(parser_state *p, expression *e) {
   // @Todo: analyze_vec_expression
   // @Todo: analyze condition
+  
+  if (!coerces(p, &e->if_stmt->cond, (type){tt_bool}, false)) {
+    // @Todo: proper error
+    printf("ERROR INVALID CAST\n");
+  }
+  printf("%d\n", e->type);
+  
   enter_scope(p);
   for (int i = 0; i < e->if_stmt->body.length; i++) {
     read_expression(p, &e->if_stmt->body.data[i]);
@@ -56,8 +63,8 @@ void generate_if_stmt(struct state *state, expression e) {
   LLVMValueRef cond = exp_to_val(state, e.if_stmt->cond);
   // @Todo: cast to boolean instead of using int32
   LLVMValueRef cmp =
-      LLVMBuildICmp(state->b, LLVMIntEQ, cond,
-                    LLVMConstInt(LLVMInt32Type(), 1, true), "ifcond");
+      LLVMBuildICmp(state->b, LLVMIntNE, cond,
+                    LLVMConstInt(LLVMTypeOf(cond), 0, true), "ifcond");
 
   LLVMBasicBlockRef then_block = LLVMAppendBasicBlock(state->fn, "then");
   LLVMBasicBlockRef else_block =
