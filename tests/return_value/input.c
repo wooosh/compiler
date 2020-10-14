@@ -1,3 +1,3 @@
-void main() {
+s64 main() {
   return 42
 }

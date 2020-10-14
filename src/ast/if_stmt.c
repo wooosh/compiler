@@ -45,7 +45,6 @@ void analyze_if_stmt(parser_state *p, expression *e) {
     // @Todo: proper error
     printf("ERROR INVALID CAST\n");
   }
-  printf("%d\n", e->type);
   
   enter_scope(p);
   for (int i = 0; i < e->if_stmt->body.length; i++) {
