@@ -14,6 +14,8 @@ typedef struct parser_state {
   vec_int_t scope_indexes;
   vec_symbol symbol_stack;
   vec_function fv;
+
+  function current_fn;
 } parser_state;
 
 void enter_scope(parser_state *p);

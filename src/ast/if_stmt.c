@@ -40,7 +40,8 @@ expression parse_if_stmt(token_buf *tb, token t, bool statement) {
 void analyze_if_stmt(parser_state *p, expression *e) {
   // @Todo: analyze_vec_expression
   // @Todo: analyze condition
-  
+
+  // @Todo: shouldn't this just be is_scalar?  
   if (!coerces(p, &e->if_stmt->cond, (type){tt_bool}, false)) {
     // @Todo: proper error
     printf("ERROR INVALID CAST\n");

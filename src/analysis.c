@@ -172,6 +172,9 @@ parser_state analyse(vec_function fv) {
 
   // validate functions & body
   for (int i = 0; i < fv.length; i++) {
+    p.current_fn = fv.data[i];    
+
+
     enter_scope(&p);
     for (int j = 0; j < fv.data[i].body.length; j++) {
       read_expression(&p, &fv.data[i].body.data[j]);

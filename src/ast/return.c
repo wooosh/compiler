@@ -20,6 +20,11 @@ expression parse_return(token_buf *tb, token t, bool statement) {
 
 void analyze_return(parser_state *p, expression *e) {
   read_expression(p, e->exp);
+  
+  if (!coerces(p, e->exp, p->current_fn.return_type, true)) {                  
+    // @Todo: proper error
+    printf("ERROR INVALID CAST\n");
+  }
 }
 
 void generate_return(struct state *state, expression e) {
