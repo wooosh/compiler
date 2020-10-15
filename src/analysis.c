@@ -42,8 +42,8 @@ symbol get_symbol(parser_state *p, char *name, int max_scope) {
 // @Todo: fix
 type parse_type(token tok) {
   type t;
-  for (int i = 0; i < NUM_BUILTIN_TYPES; i++) {
-    if (strcmp(tok.str.data, builtin_types[i]) == 0) {
+  for (int i = 0; i < tt_end; i++) {
+    if (builtin_types[i] && strcmp(tok.str.data, builtin_types[i]) == 0) {
       t.type = i;
       return t;
     }

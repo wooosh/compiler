@@ -2,8 +2,6 @@
 #define TYPE_H
 #include <stdbool.h>
 
-#define NUM_BUILTIN_TYPES 13
-const char *builtin_types[NUM_BUILTIN_TYPES];
 enum type_type {
   // @Todo: float stuff
   // @Todo: add (un)signed base and (un)signed end
@@ -30,8 +28,11 @@ enum type_type {
   tt_ptr,
   tt_array,
   tt_struct,
-  tt_fn
+  tt_fn,
+  tt_end 
 };
+
+const char *builtin_types[tt_end];
 
 typedef struct function function;
 typedef struct type {

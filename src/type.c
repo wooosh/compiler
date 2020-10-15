@@ -1,20 +1,38 @@
 #include "type.h"
 #include <llvm-c/Core.h>
-// @Todo: use designated initializers to ensure enum value matches the string
-// @Todo: s/NULL/"invalid"
-const char *builtin_types[] = {
-    "invalid", "u8",  "u16",         "u32",     "u64",  "s8",   "s16",
-    "s32",     "s64", "int_literal", "invalid", "bool", "void",
+// used to convert strings into types
+const char *builtin_types[tt_end] = {
+    [tt_u8] = "u8",
+    [tt_u16] = "u16",
+    [tt_u32] = "u32",
+    [tt_u64] = "u64",
+    
+    [tt_s8] = "s8",
+    [tt_s16] = "s16",
+    [tt_s32] = "s32",
+    [tt_s64] = "s64",
+
+    [tt_bool] = "bool",
+    [tt_void] = "void",
 };
 
-const int num_bits[] = {8, 16, 32, 64, 8, 16, 32, 64};
+const int num_bits[tt_end] = {
+    [tt_u8] = 8,
+    [tt_u16] = 16,
+    [tt_u32] = 32,
+    [tt_u64] = 64,
+    
+    [tt_s8] = 8,
+    [tt_s16] = 16,
+    [tt_s32] = 32,
+    [tt_s64] = 64,
+};
 
 bool is_scalar(type a) { return a.type > scalar_base && a.type < scalar_end; }
 
 // if a bits > b bits
 bool is_higher_precision(type a, type b) {
-  return num_bits[a.type - scalar_base - 1] >
-         num_bits[b.type - scalar_base - 1];
+  return num_bits[a.type] > num_bits[b.type];
 }
 
 bool is_signed(type a) {
