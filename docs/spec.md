@@ -38,6 +38,7 @@ Requirements:
 - The variable must be defined in scope.
 - The value being assigned must be the same type as (or implicitly casted to) the type of the variable.
 - The variable must not be const.
+
 ## If Statement
 ```
 <if> ::= "if" <ws> <exp> <ws> <block> (<ws> (<else> | <elif>))?
@@ -46,21 +47,25 @@ Requirements:
 ```
 Requirements:
 - Conditions for if and elif must be castable to bool.
+
 # Expressions
 ```
 <exp> ::= <int_literal> | <reference>
 ```
+
 ## Reference
 ```
 <reference> ::= <identifier>
 ```
 Requirements:
 - The variable must be defined in scope.
+
 ## Integer Literal
 ```
 <int_literal> ::= "-"? <digit>+
 ```
 Requirements: TODO
+
 # Full EBNF
 ```
 <program> ::= (<ws>? <function_definition> <ws>?)+
