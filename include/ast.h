@@ -23,7 +23,7 @@ struct fn_call {
   function *fn;
 };
 
-expression parse_fn_call(token_buf *tb, token t, bool statement);
+expression parse_fn_call(token_buf *tb);
 void analyze_fn_call(parser_state *p, expression *e);
 LLVMValueRef generate_fn_call(struct state *state, expression e);
 
@@ -34,7 +34,7 @@ struct int_literal {
   token val;
   type type;
 };
-expression parse_literal(token_buf *tb, token t, bool statement);
+expression parse_literal(token_buf *tb);
 LLVMValueRef generate_literal(struct state *state, expression e);
 
 // Variables
@@ -43,11 +43,11 @@ struct assignment {
   expression value;
 };
 
-expression parse_assignment(token_buf *tb, token t, bool statement);
+expression parse_assignment(token_buf *tb);
 void analyze_assignment(parser_state *p, expression *e);
 void generate_assignment(struct state *state, expression e);
 
-expression parse_reference(token_buf *tb, token t, bool statement);
+expression parse_reference(token_buf *tb);
 void analyze_reference(parser_state *p, expression *e);
 LLVMValueRef generate_reference(struct state *state, expression e);
 
@@ -60,12 +60,12 @@ struct declaration {
   // @Todo: add optional assign here
 };
 
-expression parse_let(token_buf *tb, token t, bool statement);
+expression parse_let(token_buf *tb);
 void analyze_decl(parser_state *p, expression *e);
 void generate_decl(struct state *state, expression e);
 
 // Control flow
-expression parse_return(token_buf *tb, token t, bool statement);
+expression parse_return(token_buf *tb);
 void analyze_return(parser_state *p, expression *e);
 void generate_return(struct state *state, expression e);
 
@@ -75,7 +75,7 @@ struct if_stmt {
   vec_expression else_body;
 };
 
-expression parse_if_stmt(token_buf *tb, token t, bool statement);
+expression parse_if_stmt(token_buf *tb);
 void analyze_if_stmt(parser_state *p, expression *e);
 void generate_if_stmt(struct state *state, expression e);
 #endif

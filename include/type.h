@@ -20,7 +20,7 @@ enum type_type {
   tt_s16,
   tt_s32,
   tt_s64,
-  
+
   tt_int_literal,
   scalar_end,
 

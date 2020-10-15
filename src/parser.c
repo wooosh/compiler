@@ -13,7 +13,11 @@ token tb_pop(token_buf *tb) {
   return tb->tokens[tb->idx - 1];
 }
 
+token tb_current(token_buf *tb) { return tb->tokens[tb->idx - 1]; }
+
 token tb_peek(token_buf *tb) { return tb->tokens[tb->idx]; }
+size_t tb_save(token_buf *tb) { return tb->idx; }
+void tb_restore(token_buf *tb, size_t pos) { tb->idx = pos; }
 
 // @Bug: will make idx negative if used at start of array
 void tb_unpop(token_buf *tb) { tb->idx--; }
@@ -97,41 +101,73 @@ int get_rbp(token t) {
   return get_lbp(t);
 }
 
+#define MAX_LOOKAHEAD 2
+struct parse_rule {
+  // @Todo: remove token t from type signature
+  expression (*parse)(token_buf *tb);
+  enum {
+    pr_expression = false,
+    pr_statement = true,
+    pr_both,
+  } type;
+  enum token_type pattern[MAX_LOOKAHEAD + 1]; // + 1 because null terminated
+};
+
+// @Todo: figure out where this should go
+// tries to match rules in order
+struct parse_rule parser_rules[] = {
+    // clang-format off
+    {parse_if_stmt,    pr_statement,  {t_if, 0}},
+    {parse_let,        pr_statement,  {t_let, 0}},
+    {parse_return,     pr_statement,  {t_return, 0}},
+    {parse_literal,    pr_expression, {t_literal, 0}},
+    {parse_fn_call,    pr_both,       {t_identifier, t_lparen, 0}},
+    {parse_assignment, pr_statement,  {t_identifier, t_equals, 0}},
+    {parse_reference,  pr_expression, {t_identifier, 0}},
+    {0}
+    // clang-format on
+};
+
+// @Todo: split into multiple functions
 expression parse_expression(token_buf *tb, bool statement, int rbp) {
   expression e;
-  token t = tb_pop(tb);
-  switch (t.type) {
-  case t_if:
-    e = parse_if_stmt(tb, t, statement);
-    break;
-  case t_let:
-    e = parse_let(tb, t, statement);
-    break;
-  case t_return:
-    e = parse_return(tb, t, statement);
-    break;
-  case t_literal:
-    e = parse_literal(tb, t, statement);
-    break;
-  case t_identifier: // variable reference, assignment, or fn call
-    switch (tb_peek(tb).type) {
-    case t_lparen:
-      e = parse_fn_call(tb, t, statement);
-      break;
-    case t_equals:
-      e = parse_assignment(tb, t, statement);
-      break;
-    default:
-      e = parse_reference(tb, t, statement);
-      break;
+  size_t start_point = tb_save(tb);
+  for (int i = 0; parser_rules[i].parse; i++) {
+    tb_restore(tb, start_point);
+    for (int j = 0; parser_rules[i].pattern[j]; j++) {
+      if (tb_pop(tb).type != parser_rules[i].pattern[j]) {
+        tb_restore(tb, start_point);
+        goto next_rule;
+      }
     }
-    break;
-  default:;
-    printf("??? %s %s\n", token_type_str(t.type),
-           token_str(t)); // @Todo: proper error message
-    exit(1);
-  }
 
+    tb_restore(tb, start_point);
+    if (parser_rules[i].type != pr_both && parser_rules[i].type != statement) {
+      char *mode;
+      char *found;
+      if (statement) {
+        mode = "statement";
+        found = "expression";
+      } else {
+        mode = "expression";
+        found = "statement";
+      }
+
+      token t = tb_current(tb);
+      printf("%s expected %s, found %s\n", token_location(t), mode, found);
+      print_token_loc(t);
+      exit(1);
+    }
+
+    e = parser_rules[i].parse(tb);
+    goto found_match;
+
+  next_rule:;
+  }
+  printf("no pattern was matched in lexer\n"); // @Todo: proper error message
+  exit(1);
+
+found_match:
   // don't check for infix operators in a statement
   if (statement)
     return e;
@@ -190,7 +226,7 @@ void print_expression(expression e) {
     printf("\n");
     break;
   case e_integer_literal:
-    printf("%d", e.tok.integer);
+    printf("%d", e.int_literal->val.integer);
     break;
   case e_fn_call:
     printf("%s(", e.fn_call->name.str);

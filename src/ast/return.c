@@ -6,9 +6,8 @@
 
 #include <llvm-c/Core.h>
 
-expression parse_return(token_buf *tb, token t, bool statement) {
-  if (!statement)
-    statement_mode_error(statement, t, "return statement");
+expression parse_return(token_buf *tb) {
+  tb_pop(tb); // pop return token off
 
   expression e;
   e.type = e_return;
@@ -20,8 +19,8 @@ expression parse_return(token_buf *tb, token t, bool statement) {
 
 void analyze_return(parser_state *p, expression *e) {
   read_expression(p, e->exp);
-  
-  if (!coerces(p, e->exp, p->current_fn.return_type, true)) {                  
+
+  if (!coerces(p, e->exp, p->current_fn.return_type, true)) {
     // @Todo: proper error
     printf("ERROR INVALID CAST\n");
   }

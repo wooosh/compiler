@@ -84,7 +84,8 @@ bool coerces(parser_state *p, expression *e, type t, bool write_cast) {
 
   // @Todo: check if literal can fit in the type
   if (is_scalar(t) && e_type.type == tt_int_literal) {
-    if (write_cast) e->int_literal->type = t;
+    if (write_cast)
+      e->int_literal->type = t;
     return true;
   }
 
@@ -93,13 +94,13 @@ bool coerces(parser_state *p, expression *e, type t, bool write_cast) {
   // why they are checked before this block
   expression cast_e;
   if (write_cast) {
-      cast_e.cast = malloc(sizeof(struct cast));
-      cast_e.type = e_cast;
-      cast_e.cast->exp = *e;
-      cast_e.cast->from = e_type;
+    cast_e.cast = malloc(sizeof(struct cast));
+    cast_e.type = e_cast;
+    cast_e.cast->exp = *e;
+    cast_e.cast->from = e_type;
   }
- 
-  // all scalar types can be cast to bool 
+
+  // all scalar types can be cast to bool
   if (t.type == tt_bool && is_scalar(e_type)) {
     if (write_cast) {
       cast_e.cast->to = t;
@@ -109,7 +110,8 @@ bool coerces(parser_state *p, expression *e, type t, bool write_cast) {
   }
 
   // integers can promote to a higher precision of the same sign
-  if (is_scalar(t) && is_scalar(e_type) && is_signed(t) == is_signed(e_type) && t.type > e_type.type) {
+  if (is_scalar(t) && is_scalar(e_type) && is_signed(t) == is_signed(e_type) &&
+      t.type > e_type.type) {
     if (write_cast) {
       cast_e.cast->to = t;
       memcpy(e, &cast_e, sizeof(expression));
@@ -172,8 +174,7 @@ parser_state analyse(vec_function fv) {
 
   // validate functions & body
   for (int i = 0; i < fv.length; i++) {
-    p.current_fn = fv.data[i];    
-
+    p.current_fn = fv.data[i];
 
     enter_scope(&p);
     for (int j = 0; j < fv.data[i].body.length; j++) {

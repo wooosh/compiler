@@ -6,10 +6,9 @@
 
 #include <llvm-c/Core.h>
 
-expression parse_literal(token_buf *tb, token t, bool statement) {
-  if (statement)
-    statement_mode_error(statement, t, "integer literal");
+expression parse_literal(token_buf *tb) {
   expression e;
+  token t = tb_pop(tb); // get literal token
   e.type = e_integer_literal;
   e.int_literal = malloc(sizeof(struct int_literal));
   e.int_literal->val = t;
@@ -19,5 +18,6 @@ expression parse_literal(token_buf *tb, token t, bool statement) {
 LLVMValueRef generate_literal(struct state *state, expression e) {
   // @Todo: coerce to proper type
   // @Todo: tag integer literals with their determined type during analysis
-  return LLVMConstInt(to_llvm_type(e.int_literal->type), e.int_literal->val.integer, true);
+  return LLVMConstInt(to_llvm_type(e.int_literal->type),
+                      e.int_literal->val.integer, true);
 }

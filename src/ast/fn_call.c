@@ -6,16 +6,17 @@
 
 #include <llvm-c/Core.h>
 
-expression parse_fn_call(token_buf *tb, token t, bool statement) {
+expression parse_fn_call(token_buf *tb) {
   expression e;
   e.type = e_fn_call;
   struct fn_call *fnc = malloc(sizeof(struct fn_call));
-  fnc->name = t;
+  fnc->name = tb_pop(tb);
   // @Todo: quit if not lparen
   tb_pop(tb); // skip lparen
   vec_init(&fnc->params);
   if (tb_pop(tb).type != t_rparen) {
     tb_unpop(tb);
+    token t;
     do {
       vec_push(&fnc->params, parse_expression(tb, false, 0));
       try_pop_types(tb, t, NULL, t_comma, t_rparen);
@@ -52,13 +53,13 @@ void analyze_fn_call(parser_state *p, expression *e) {
           goto next;
         }
       }
-      
+
       // Write any neccesary typecasts
       for (int i = 0; i < fn->params.length; i++) {
         // @Todo: use casts from coerces
         coerces(p, &fnc->params.data[i], fn->params.data[i].type, true);
       }
-      
+
       fnc->fn = fn;
       return;
     }

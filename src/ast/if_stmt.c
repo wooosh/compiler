@@ -5,10 +5,10 @@
 
 #include <llvm-c/Core.h>
 
-expression parse_if_stmt(token_buf *tb, token t, bool statement) {
+expression parse_if_stmt(token_buf *tb) {
   expression e;
-  if (!statement)
-    statement_mode_error(statement, t, "if statement");
+  tb_pop(tb); // pop off if token
+
   // initialize struct to be an if statment
   e.type = e_if;
   e.if_stmt = malloc(sizeof(struct if_stmt));
@@ -41,12 +41,12 @@ void analyze_if_stmt(parser_state *p, expression *e) {
   // @Todo: analyze_vec_expression
   // @Todo: analyze condition
 
-  // @Todo: shouldn't this just be is_scalar?  
+  // @Todo: shouldn't this just be is_scalar?
   if (!coerces(p, &e->if_stmt->cond, (type){tt_bool}, false)) {
     // @Todo: proper error
     printf("ERROR INVALID CAST\n");
   }
-  
+
   enter_scope(p);
   for (int i = 0; i < e->if_stmt->body.length; i++) {
     read_expression(p, &e->if_stmt->body.data[i]);

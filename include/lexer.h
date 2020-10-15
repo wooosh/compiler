@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 enum token_type {
+  t_unknown = 0, // used to null terminate parser_rules
   t_operator,
   t_return,
   t_identifier,
@@ -23,7 +24,6 @@ enum token_type {
   t_rbrace,
   t_comma,
   t_EOF,
-  t_unknown
 };
 
 typedef struct token_pos {

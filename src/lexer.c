@@ -161,12 +161,12 @@ token read_token(tracked_file *f) {
   case '/': {
     // @Todo: add block comments
     char comment_type = wgetc(f);
-    switch(comment_type) {
+    switch (comment_type) {
     case '/': // line comment
       while (wgetc(f) != '\n')
         ;
       return read_token(f);
-    
+
     case '*': // block comment
       while (1) {
         char buf = wgetc(f);
@@ -174,15 +174,16 @@ token read_token(tracked_file *f) {
           buf = wgetc(f);
           if (buf == '/') {
             break;
-          } else wungetc(buf, f);
+          } else
+            wungetc(buf, f);
         } else if (buf == EOF) {
           printf("%s: Hit EOF before block comment ended\n", token_location(t));
           exit(1);
         }
       }
       return read_token(f);
-    default: // division operator, not a comment 
-      wungetc(comment_type,f);
+    default: // division operator, not a comment
+      wungetc(comment_type, f);
     }
     // fall through
   }

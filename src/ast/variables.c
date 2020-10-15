@@ -7,12 +7,10 @@
 #include <llvm-c/Core.h>
 
 // Reference
-expression parse_reference(token_buf *tb, token t, bool statement) {
-  if (statement)
-    statement_mode_error(statement, t, "variable reference");
+expression parse_reference(token_buf *tb) {
   expression e;
   e.type = e_reference;
-  e.tok = t;
+  e.tok = tb_pop(tb);
   return e;
 }
 
@@ -31,12 +29,10 @@ LLVMValueRef generate_reference(struct state *state, expression e) {
 }
 
 // Assignment
-expression parse_assignment(token_buf *tb, token t, bool statement) {
-  if (!statement)
-    statement_mode_error(statement, t, "variable assignment");
-  tb_pop(tb);
+expression parse_assignment(token_buf *tb) {
   struct assignment *a = malloc(sizeof(struct assignment));
-  a->name = t;
+  a->name = tb_pop(tb);
+  tb_pop(tb); // pop equals sign
   a->value = parse_expression(tb, false, 0);
 
   expression e;
@@ -83,10 +79,9 @@ void generate_assignment(struct state *state, expression e) {
 }
 
 // Variable definitions
-expression parse_let(token_buf *tb, token t, bool statement) {
+expression parse_let(token_buf *tb) {
   expression e;
-  if (!statement)
-    statement_mode_error(statement, t, "declaration");
+  tb_pop(tb); // pop "let" token
   e.type = e_declaration;
   e.decl = malloc(sizeof(struct declaration));
   e.decl->is_const = false;
@@ -112,7 +107,8 @@ void analyze_decl(parser_state *p, expression *e) {
 }
 
 void generate_decl(struct state *state, expression e) {
-  c_symbol s = {LLVMBuildAlloca(state->b, to_llvm_type(e.decl->type), "variable"),
-                e.decl->name.str.data};
+  c_symbol s = {
+      LLVMBuildAlloca(state->b, to_llvm_type(e.decl->type), "variable"),
+      e.decl->name.str.data};
   vec_push(&state->symbol_stack, s);
 }

@@ -45,7 +45,7 @@ typedef struct expression {
     struct assignment *assign;
     struct if_stmt *if_stmt;
     struct cast *cast;
-    struct int_literal* int_literal;
+    struct int_literal *int_literal;
   };
 } expression;
 typedef vec_t(expression) vec_expression;
