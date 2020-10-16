@@ -107,6 +107,7 @@ void codegen(parser_state p) {
   vec_init(&state.symbol_stack);
 
   // generate code for functions
+  LLVMBuilderRef builder = LLVMCreateBuilder();
   for (int i = 0; i < p.fv.length; i++) {
     function fn_data = p.fv.data[i];
     // @Todo: parameters
@@ -117,7 +118,6 @@ void codegen(parser_state p) {
     // set up function
     LLVMValueRef fn_llvm =
         LLVMAddFunction(module, fn_data.name.str.data, functionType);
-    LLVMBuilderRef builder = LLVMCreateBuilder();
     LLVMBasicBlockRef entryBlock = LLVMAppendBasicBlock(fn_llvm, "entry");
     LLVMPositionBuilderAtEnd(builder, entryBlock);
 
