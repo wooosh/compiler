@@ -103,7 +103,6 @@ int get_rbp(token t) {
 
 #define MAX_LOOKAHEAD 2
 struct parse_rule {
-  // @Todo: remove token t from type signature
   expression (*parse)(token_buf *tb);
   enum {
     pr_expression = false,
@@ -117,13 +116,13 @@ struct parse_rule {
 // tries to match rules in order
 struct parse_rule parser_rules[] = {
     // clang-format off
-    {parse_if_stmt,    pr_statement,  {t_if, 0}},
-    {parse_let,        pr_statement,  {t_let, 0}},
-    {parse_return,     pr_statement,  {t_return, 0}},
-    {parse_literal,    pr_expression, {t_literal, 0}},
-    {parse_fn_call,    pr_both,       {t_identifier, t_lparen, 0}},
-    {parse_assignment, pr_statement,  {t_identifier, t_equals, 0}},
-    {parse_reference,  pr_expression, {t_identifier, 0}},
+    {parse_if_stmt,    pr_statement,  {t_if}},
+    {parse_let,        pr_statement,  {t_let}},
+    {parse_return,     pr_statement,  {t_return}},
+    {parse_literal,    pr_expression, {t_literal}},
+    {parse_fn_call,    pr_both,       {t_identifier, t_lparen}},
+    {parse_assignment, pr_statement,  {t_identifier, t_equals}},
+    {parse_reference,  pr_expression, {t_identifier}},
     {0}
     // clang-format on
 };

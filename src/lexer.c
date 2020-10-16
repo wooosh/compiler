@@ -141,7 +141,7 @@ char *token_location(token t) {
 
 void eat_whitespace(tracked_file *f) {
   char c;
-  while ((c = wgetc(f)) && (c == ' ' || c == '\t' || c == '\n'))
+  while ((c = wgetc(f)) && isspace(c))
     ;
   wungetc(c, f);
 }
@@ -235,8 +235,9 @@ token read_token(tracked_file *f) {
     str.data[str.length] = '\0';
     wungetc(c, f);
     if (is_num) {
-      // @Todo: read into unsigned variable, and negate if first char is '-'
-      sscanf(str.data, "%d", &t.integer);
+      // @Todo: use endptr error handling for stroull
+      // @Todo: read using stroull or strtoll depending if a sign is present
+      t.integer = strtoull(str.data, NULL, 0);
       t.type = t_literal;
       return t;
     } else {

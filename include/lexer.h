@@ -40,7 +40,7 @@ typedef struct token {
   token_pos pos;
   union {
     vec_char_t str; // identifer, str literal
-    int integer;    // num literal
+    long long int integer;    // num literal
   };
 } token;
 
