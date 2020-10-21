@@ -270,6 +270,7 @@ vec_function parse(vec_token tokens) {
 
   while (tb->tokens[tb->idx].type != t_EOF) {
     function fn;
+    fn.builtin = false;
     vec_init(&fn.params);
     try_pop_type(tb, fn.return_type_tok, "return type", t_identifier);
     try_pop_type(tb, fn.name, "function name", t_identifier);

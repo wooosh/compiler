@@ -84,9 +84,18 @@ LLVMValueRef generate_fn_call(struct state *state, expression e) {
     case '*':
       return LLVMBuildMul(state->b, exp_to_val(state, fnc.params.data[0]),
                           exp_to_val(state, fnc.params.data[1]), "multtmp");
+    case '-':
+      return LLVMBuildSub(state->b, exp_to_val(state, fnc.params.data[0]),
+                          exp_to_val(state, fnc.params.data[1]), "multtmp");
     }
+  } else {
+    LLVMValueRef *args = malloc(sizeof(LLVMValueRef)*e.fn_call->params.length);
+    for (int i=0; i<e.fn_call->params.length; i++) {
+      args[i] = exp_to_val(state, fnc.params.data[i]);
+    }
+    // @Todo: assertion that symbol is present
+    return LLVMBuildCall(state->b,
+                         get_c_symbol(state, e.fn_call->name.str.data), args, e.fn_call->params.length,
+                         "fn call");
   }
-  // @Todo: support normal functions
-  printf("unknown function; only builtins are supported currently\n");
-  exit(1);
 }

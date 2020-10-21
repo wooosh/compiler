@@ -5,6 +5,8 @@
 #include "stdbool.h"
 #include "type.h"
 
+#include <llvm-c/Core.h>
+
 typedef struct token_buf {
   token *tokens;
   size_t idx;
@@ -67,6 +69,7 @@ typedef struct function {
   vec_expression body;
 
   bool builtin;
+  LLVMValueRef fn_llvm;
 } function;
 
 typedef vec_t(function) vec_function;

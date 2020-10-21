@@ -36,4 +36,6 @@ void add_builtins(parser_state *p) {
               (char *[]){"a", "b"}, 2);
   add_builtin(p, "*", (type){tt_s64}, (type[]){{tt_s64}, {tt_s64}},
               (char *[]){"a", "b"}, 2);
+  add_builtin(p, "-", (type){tt_s64}, (type[]){{tt_s64}, {tt_s64}},
+              (char *[]){"a", "b"}, 2);
 }

@@ -29,7 +29,7 @@ enum type_type {
   tt_array,
   tt_struct,
   tt_fn,
-  tt_end 
+  tt_end
 };
 
 const char *builtin_types[tt_end];

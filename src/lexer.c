@@ -187,6 +187,7 @@ token read_token(tracked_file *f) {
     }
     // fall through
   }
+  case '-':
   case '+':
   case '*':
     t.type = t_operator;

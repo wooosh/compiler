@@ -41,6 +41,7 @@ void analyze_if_stmt(parser_state *p, expression *e) {
   // @Todo: analyze_vec_expression
   // @Todo: analyze condition
 
+  read_expression(p, &e->if_stmt->cond);
   // @Todo: shouldn't this just be is_scalar?
   if (!coerces(p, &e->if_stmt->cond, (type){tt_bool}, false)) {
     // @Todo: proper error
@@ -74,6 +75,8 @@ void generate_if_stmt(struct state *state, expression e) {
 
   LLVMBuildCondBr(state->b, cmp, then_block, else_block);
 
+  bool merge_unreachable = true;
+
   // Emit then block
   LLVMPositionBuilderAtEnd(state->b, then_block);
 
@@ -85,8 +88,10 @@ void generate_if_stmt(struct state *state, expression e) {
 
   // Add a terminator if the block does not already have one
   then_block = LLVMGetInsertBlock(state->b);
-  if (LLVMGetBasicBlockTerminator(then_block) == NULL)
+  if (LLVMGetBasicBlockTerminator(then_block) == NULL) {
     LLVMBuildBr(state->b, merge_block);
+    merge_unreachable = false;
+  }
 
   // Emit else block
   LLVMAppendExistingBasicBlock(state->fn, else_block);
@@ -98,10 +103,14 @@ void generate_if_stmt(struct state *state, expression e) {
   }
 
   else_block = LLVMGetInsertBlock(state->b);
-  if (LLVMGetBasicBlockTerminator(else_block) == NULL)
+  if (LLVMGetBasicBlockTerminator(else_block) == NULL) {
     LLVMBuildBr(state->b, merge_block);
+    merge_unreachable = false;
+  }
 
   // Emit merge block
   LLVMAppendExistingBasicBlock(state->fn, merge_block);
   LLVMPositionBuilderAtEnd(state->b, merge_block);
+
+  if (merge_unreachable) LLVMBuildUnreachable(state->b);
 }

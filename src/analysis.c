@@ -177,6 +177,16 @@ parser_state analyse(vec_function fv) {
     p.current_fn = fv.data[i];
 
     enter_scope(&p);
+    // add parameters to scope
+    for (int j = 0; j < fv.data[i].params.length; j++) {
+      fv.data[i].params.data[j].type = parse_type(fv.data[i].params.data[j].type_tok);
+
+      symbol s = {false, fv.data[i].params.data[j].name.str.data, fv.data[i].params.data[j].type};
+      vec_push(&p.symbol_stack, s);
+      
+    }
+
+    // evaluate function body
     for (int j = 0; j < fv.data[i].body.length; j++) {
       read_expression(&p, &fv.data[i].body.data[j]);
     }
